@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{
-  id?: string
+  id: string
   title: string
   description: string
   imageUrl: string
@@ -8,20 +8,28 @@ const props = defineProps<{
 </script>
 
 <template>
-  <article class="card">
-    <div class="media">
-      <img :src="props.imageUrl" :alt="props.title" />
-      <div class="overlay">
-        <div class="overlay-content">
-          <h3>{{ props.title }}</h3>
-          <p class="desc">{{ props.description }}</p>
+  <RouterLink :to="`/setups/${props.id}`" class="card-link">
+    <article class="card">
+      <div class="media">
+        <img :src="props.imageUrl" :alt="props.title" />
+        <div class="overlay">
+          <div class="overlay-content">
+            <h3>{{ props.title }}</h3>
+            <p class="desc">{{ props.description }}</p>
+          </div>
         </div>
       </div>
-    </div>
-  </article>
+    </article>
+  </RouterLink>
 </template>
 
 <style scoped>
+.card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
 .card {
   display: block;
   background: var(--surface);

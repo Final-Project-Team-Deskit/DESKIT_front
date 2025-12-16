@@ -1,5 +1,6 @@
 import type { ProductTags } from './products-data'
 import { productsData } from './products-data'
+import { setupsData } from './setups-data'
 
 export type LiveItem = {
   id: string
@@ -67,44 +68,12 @@ export const liveItems: LiveItem[] = [
   },
 ]
 
-export const popularSetups: SetupItem[] = [
-  {
-    id: '1',
-    title: '미니멀 화이트 셋업',
-    description: '깔끔한 화이트 톤의 심플한 책상 구성',
-    imageUrl: '/minimal-white-desk-setup.jpg',
-  },
-  {
-    id: '2',
-    title: '게이밍 RGB 셋업',
-    description: '화려한 RGB 조명의 게이밍 환경',
-    imageUrl: '/gaming-rgb-desk-setup.jpg',
-  },
-  {
-    id: '3',
-    title: '우드 내추럴 셋업',
-    description: '따뜻한 원목 느낌의 자연스러운 공간',
-    imageUrl: '/wooden-natural-desk-setup.jpg',
-  },
-  {
-    id: '4',
-    title: '프로페셔널 오피스',
-    description: '효율적인 업무 환경을 위한 전문가 셋업',
-    imageUrl: '/professional-office-desk-setup.jpg',
-  },
-  {
-    id: '5',
-    title: '스튜디오 크리에이터',
-    description: '콘텐츠 제작을 위한 완벽한 작업 공간',
-    imageUrl: '/content-creator-studio-desk.jpg',
-  },
-  {
-    id: '6',
-    title: '컴팩트 원룸 셋업',
-    description: '작은 공간을 효율적으로 활용한 구성',
-    imageUrl: '/compact-small-desk-setup.jpg',
-  },
-]
+export const popularSetups: SetupItem[] = setupsData.slice(0, 6).map((setup) => ({
+  id: String(setup.setup_id),
+  title: setup.title,
+  description: setup.short_desc,
+  imageUrl: setup.imageUrl || '/placeholder-setup.jpg',
+}))
 
 export const popularProducts: ProductItem[] = productsData
   .filter((product) => product.status === 'ON_SALE' || product.status === 'LIMITED_SALE')
