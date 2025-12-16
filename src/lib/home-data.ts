@@ -1,3 +1,6 @@
+import type { ProductTags } from './products-data'
+import { productsData } from './products-data'
+
 export type LiveItem = {
   id: string
   title: string
@@ -21,7 +24,6 @@ export type ProductItem = {
   imageUrl: string
   price: number
   originalPrice?: number
-  discountRate?: number
   tags: ProductTags
   isSoldOut?: boolean
 }
@@ -104,112 +106,16 @@ export const popularSetups: SetupItem[] = [
   },
 ]
 
-export const popularProducts: ProductItem[] = [
-  {
-    id: '1',
-    name: '에르고노믹 메쉬 체어 프리미엄',
-    imageUrl: '/ergonomic-mesh-chair.jpg',
-    price: 289000,
-    originalPrice: 359000,
-    discountRate: 20,
-    tags: {
-      space: ['오피스', '서재'],
-      tone: ['모던', '블랙'],
-      situation: ['재택근무', '화상회의'],
-      mood: ['집중', '깔끔한'],
-    },
-  },
-  {
-    id: '2',
-    name: 'USB-C 도킹 스테이션 11포트',
-    imageUrl: '/usb-c-docking-station.jpg',
-    price: 129000,
-    originalPrice: 169000,
-    discountRate: 24,
-    tags: {
-      space: ['오피스'],
-      tone: ['미니멀', '블랙'],
-      situation: ['재택근무', '화상회의'],
-      mood: ['깔끔한'],
-    },
-  },
-  {
-    id: '3',
-    name: '기계식 키보드 RGB 청축',
-    imageUrl: '/mechanical-keyboard-rgb.jpg',
-    price: 159000,
-    tags: {
-      space: ['게이밍룸', '서재'],
-      tone: ['블랙', '컬러풀'],
-      situation: ['게임', '공부'],
-      mood: ['집중', '시크'],
-    },
-  },
-  {
-    id: '4',
-    name: '무선 마우스 게이밍 프로',
-    imageUrl: '/wireless-gaming-mouse.jpg',
-    price: 89000,
-    originalPrice: 119000,
-    discountRate: 25,
-    tags: {
-      space: ['게이밍룸'],
-      tone: ['블랙'],
-      situation: ['게임'],
-      mood: ['집중', '시크'],
-    },
-  },
-  {
-    id: '5',
-    name: '27인치 4K 모니터 IPS',
-    imageUrl: '/27-inch-4k-monitor.jpg',
-    price: 449000,
-    originalPrice: 599000,
-    discountRate: 25,
-    tags: {
-      space: ['오피스', '서재'],
-      tone: ['모던', '화이트'],
-      situation: ['영상편집', '재택근무'],
-      mood: ['깔끔한'],
-    },
-  },
-  {
-    id: '6',
-    name: 'LED 데스크 라이트 조명',
-    imageUrl: '/led-desk-lamp.jpg',
-    price: 59000,
-    tags: {
-      space: ['홈카페', '서재'],
-      tone: ['우드톤', '화이트'],
-      situation: ['공부', '휴식'],
-      mood: ['따뜻한', '감성'],
-    },
-  },
-  {
-    id: '7',
-    name: '스탠딩 데스크 전동 높이조절',
-    imageUrl: '/electric-standing-desk.jpg',
-    price: 589000,
-    originalPrice: 799000,
-    discountRate: 26,
-    tags: {
-      space: ['오피스', '원룸'],
-      tone: ['우드톤', '모던'],
-      situation: ['재택근무'],
-      mood: ['깔끔한'],
-    },
-  },
-  {
-    id: '8',
-    name: '노트북 거치대 알루미늄',
-    imageUrl: '/aluminum-laptop-stand.jpg',
-    price: 45000,
-    tags: {
-      space: ['오피스', '홈카페'],
-      tone: ['미니멀', '화이트'],
-      situation: ['재택근무', '화상회의'],
-      mood: ['깔끔한'],
-    },
-  },
-]
-import type { ProductTags } from './products-data'
+export const popularProducts: ProductItem[] = productsData
+  .filter((product) => product.status === 'ON_SALE' || product.status === 'LIMITED_SALE')
+  .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
+  .slice(0, 12)
+  .map((product) => ({
+    id: String(product.product_id),
+    name: product.name,
+    imageUrl: product.imageUrl ?? '/placeholder-product.jpg',
+    price: product.price,
+    originalPrice: product.cost_price > product.price ? product.cost_price : undefined,
+    tags: product.tags ?? { space: [], tone: [], situation: [], mood: [] },
+    isSoldOut: product.status === 'SOLD_OUT',
+  }))

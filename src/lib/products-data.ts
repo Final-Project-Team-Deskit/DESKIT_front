@@ -1,226 +1,335 @@
-export type Product = {
-  id: string
+export type ProductStatus =
+  | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'READY'
+  | 'ON_SALE'
+  | 'LIMITED_SALE'
+  | 'SOLD_OUT'
+  | 'HIDDEN'
+  | 'DELETED'
+
+export type TagCategoryKey = 'space' | 'tone' | 'situation' | 'mood'
+export type ProductTags = Record<TagCategoryKey, string[]>
+
+export type ProductCategoryKey = 'furniture' | 'computer' | 'accessory' | 'all'
+
+export type DbProduct = {
+  product_id: number
+  product_t_id?: number | null
+  seller_id: number
+  category_id?: number | null
   name: string
-  category: string
+  short_desc: string
   price: number
-  originalPrice: number
-  popularity: number
-  salesVolume: number
-  tags: ProductTags
-  imageUrl: string
-  description?: string
+  cost_price: number
+  status: ProductStatus
+  created_dt: string
+  updated_dt: string
+  productCategory?: Exclude<ProductCategoryKey, 'all'>
+  popularity?: number
+  salesVolume?: number
+  imageUrl?: string
+  tags?: ProductTags
+  tagsFlat?: string[]
 }
 
-export type ProductTags = {
-  space: string[]
-  tone: string[]
-  situation: string[]
-  mood: string[]
-}
+export const flattenTags = (tags?: ProductTags) => (tags ? Object.values(tags).flat() : [])
 
-export const productsData: Product[] = [
+export const productsData: DbProduct[] = [
   {
-    id: '1',
+    product_id: 1,
+    product_t_id: null,
+    seller_id: 101,
+    category_id: 1,
     name: '에르고노믹 메쉬 체어 프리미엄',
-    category: '가구',
+    short_desc: '통기성과 지지력이 우수한 프리미엄 메쉬 체어',
     price: 289000,
-    originalPrice: 359000,
+    cost_price: 359000,
+    status: 'ON_SALE',
+    created_dt: '2024-01-05T09:00:00Z',
+    updated_dt: '2024-02-10T10:00:00Z',
+    productCategory: 'furniture',
     popularity: 96,
     salesVolume: 1247,
+    imageUrl: '/ergonomic-mesh-chair.jpg',
     tags: {
       space: ['오피스', '서재'],
       tone: ['모던', '블랙'],
       situation: ['재택근무', '화상회의'],
       mood: ['집중', '깔끔한'],
     },
-    imageUrl: '/ergonomic-mesh-chair.jpg',
-    description: '통기성과 지지력이 우수한 프리미엄 메쉬 체어',
+    tagsFlat: [],
   },
   {
-    id: '2',
+    product_id: 2,
+    product_t_id: null,
+    seller_id: 102,
+    category_id: 2,
     name: 'USB-C 도킹 스테이션 11포트',
-    category: '전자기기',
+    short_desc: '노트북 확장을 위한 올인원 도킹 스테이션',
     price: 129000,
-    originalPrice: 169000,
+    cost_price: 169000,
+    status: 'LIMITED_SALE',
+    created_dt: '2024-02-12T09:00:00Z',
+    updated_dt: '2024-02-20T10:00:00Z',
+    productCategory: 'computer',
     popularity: 92,
     salesVolume: 892,
+    imageUrl: '/usb-c-docking-station.jpg',
     tags: {
       space: ['오피스'],
       tone: ['미니멀', '블랙'],
       situation: ['재택근무', '화상회의'],
       mood: ['깔끔한'],
     },
-    imageUrl: '/usb-c-docking-station.jpg',
-    description: '노트북 확장을 위한 올인원 도킹 스테이션',
+    tagsFlat: [],
   },
   {
-    id: '3',
+    product_id: 3,
+    product_t_id: null,
+    seller_id: 103,
+    category_id: 3,
     name: '기계식 키보드 RGB 청축',
-    category: '악세서리',
+    short_desc: '또렷한 타건감의 RGB 기계식 키보드',
     price: 159000,
-    originalPrice: 189000,
+    cost_price: 189000,
+    status: 'ON_SALE',
+    created_dt: '2024-02-18T09:00:00Z',
+    updated_dt: '2024-02-25T10:00:00Z',
+    productCategory: 'accessory',
     popularity: 98,
     salesVolume: 2156,
+    imageUrl: '/mechanical-keyboard-rgb.jpg',
     tags: {
       space: ['게이밍룸', '서재'],
       tone: ['블랙', '컬러풀'],
       situation: ['게임', '공부'],
       mood: ['집중', '시크'],
     },
-    imageUrl: '/mechanical-keyboard-rgb.jpg',
-    description: '또렷한 타건감의 RGB 기계식 키보드',
+    tagsFlat: [],
   },
   {
-    id: '4',
+    product_id: 4,
+    product_t_id: null,
+    seller_id: 104,
+    category_id: 3,
     name: '무선 마우스 게이밍 프로',
-    category: '악세서리',
+    short_desc: '초저지연 무선 게이밍 마우스',
     price: 89000,
-    originalPrice: 119000,
+    cost_price: 119000,
+    status: 'ON_SALE',
+    created_dt: '2024-03-01T09:00:00Z',
+    updated_dt: '2024-03-08T10:00:00Z',
+    productCategory: 'accessory',
     popularity: 94,
     salesVolume: 1523,
+    imageUrl: '/wireless-gaming-mouse.jpg',
     tags: {
       space: ['게이밍룸'],
       tone: ['블랙'],
       situation: ['게임'],
       mood: ['집중', '시크'],
     },
-    imageUrl: '/wireless-gaming-mouse.jpg',
-    description: '초저지연 무선 게이밍 마우스',
+    tagsFlat: [],
   },
   {
-    id: '5',
+    product_id: 5,
+    product_t_id: null,
+    seller_id: 105,
+    category_id: 2,
     name: '27인치 4K 모니터 IPS',
-    category: '전자기기',
+    short_desc: '선명한 색감과 시야각을 제공하는 4K IPS 모니터',
     price: 449000,
-    originalPrice: 599000,
+    cost_price: 599000,
+    status: 'ON_SALE',
+    created_dt: '2024-03-15T09:00:00Z',
+    updated_dt: '2024-03-22T10:00:00Z',
+    productCategory: 'computer',
     popularity: 96,
     salesVolume: 756,
+    imageUrl: '/27-inch-4k-monitor.jpg',
     tags: {
       space: ['오피스', '서재'],
       tone: ['모던', '화이트'],
       situation: ['영상편집', '재택근무'],
       mood: ['깔끔한'],
     },
-    imageUrl: '/27-inch-4k-monitor.jpg',
-    description: '선명한 색감과 시야각을 제공하는 4K IPS 모니터',
+    tagsFlat: [],
   },
   {
-    id: '6',
+    product_id: 6,
+    product_t_id: null,
+    seller_id: 106,
+    category_id: 3,
     name: 'LED 데스크 라이트 조명',
-    category: '악세서리',
+    short_desc: '눈부심을 줄여주는 스텝 조절 LED 라이트',
     price: 59000,
-    originalPrice: 79000,
+    cost_price: 79000,
+    status: 'ON_SALE',
+    created_dt: '2024-03-28T09:00:00Z',
+    updated_dt: '2024-04-02T10:00:00Z',
+    productCategory: 'accessory',
     popularity: 90,
     salesVolume: 2341,
+    imageUrl: '/led-desk-lamp.jpg',
     tags: {
       space: ['홈카페', '서재'],
       tone: ['우드톤', '화이트'],
       situation: ['공부', '휴식'],
       mood: ['따뜻한', '감성'],
     },
-    imageUrl: '/led-desk-lamp.jpg',
-    description: '눈부심을 줄여주는 스텝 조절 LED 라이트',
+    tagsFlat: [],
   },
   {
-    id: '7',
+    product_id: 7,
+    product_t_id: null,
+    seller_id: 107,
+    category_id: 1,
     name: '스탠딩 데스크 전동 높이조절',
-    category: '가구',
+    short_desc: '원터치로 높낮이를 조절하는 전동 스탠딩 데스크',
     price: 589000,
-    originalPrice: 799000,
+    cost_price: 799000,
+    status: 'ON_SALE',
+    created_dt: '2024-04-10T09:00:00Z',
+    updated_dt: '2024-04-16T10:00:00Z',
+    productCategory: 'furniture',
     popularity: 98,
     salesVolume: 412,
+    imageUrl: '/electric-standing-desk.jpg',
     tags: {
       space: ['오피스', '원룸'],
       tone: ['우드톤', '모던'],
       situation: ['재택근무'],
       mood: ['깔끔한'],
     },
-    imageUrl: '/electric-standing-desk.jpg',
-    description: '원터치로 높낮이를 조절하는 전동 스탠딩 데스크',
+    tagsFlat: [],
   },
   {
-    id: '8',
+    product_id: 8,
+    product_t_id: null,
+    seller_id: 108,
+    category_id: 3,
     name: '노트북 거치대 알루미늄',
-    category: '악세서리',
+    short_desc: '열 배출과 각도 조절이 가능한 알루미늄 거치대',
     price: 45000,
-    originalPrice: 65000,
+    cost_price: 65000,
+    status: 'LIMITED_SALE',
+    created_dt: '2024-04-22T09:00:00Z',
+    updated_dt: '2024-04-28T10:00:00Z',
+    productCategory: 'accessory',
     popularity: 92,
     salesVolume: 1876,
+    imageUrl: '/aluminum-laptop-stand.jpg',
     tags: {
       space: ['오피스', '홈카페'],
       tone: ['미니멀', '화이트'],
       situation: ['재택근무', '화상회의'],
       mood: ['깔끔한'],
     },
-    imageUrl: '/aluminum-laptop-stand.jpg',
-    description: '열 배출과 각도 조절이 가능한 알루미늄 거치대',
+    tagsFlat: [],
   },
   {
-    id: '9',
+    product_id: 9,
+    product_t_id: null,
+    seller_id: 109,
+    category_id: 3,
     name: '케이블 정리 박스 세트',
-    category: '악세서리',
+    short_desc: '지저분한 케이블을 깔끔하게 숨기는 정리 박스',
     price: 29000,
-    originalPrice: 39000,
+    cost_price: 39000,
+    status: 'ON_SALE',
+    created_dt: '2024-05-01T09:00:00Z',
+    updated_dt: '2024-05-06T10:00:00Z',
+    productCategory: 'accessory',
     popularity: 88,
     salesVolume: 3214,
+    imageUrl: '/cable-management-box.jpg',
     tags: {
       space: ['원룸', '거실'],
       tone: ['미니멀', '화이트'],
       situation: ['재택근무'],
       mood: ['깔끔한'],
     },
-    imageUrl: '/cable-management-box.jpg',
-    description: '지저분한 케이블을 깔끔하게 숨기는 정리 박스',
+    tagsFlat: [],
   },
   {
-    id: '10',
+    product_id: 10,
+    product_t_id: null,
+    seller_id: 110,
+    category_id: 2,
     name: '웹캠 4K 스트리밍 프로',
-    category: '전자기기',
+    short_desc: '전문가용 4K 화질과 노이즈 캔슬 마이크 탑재',
     price: 189000,
-    originalPrice: 239000,
+    cost_price: 239000,
+    status: 'ON_SALE',
+    created_dt: '2024-05-14T09:00:00Z',
+    updated_dt: '2024-05-20T10:00:00Z',
+    productCategory: 'computer',
     popularity: 94,
     salesVolume: 634,
+    imageUrl: '/4k-streaming-webcam.jpg',
     tags: {
       space: ['오피스', '홈카페'],
       tone: ['모던', '블랙'],
       situation: ['화상회의', '재택근무'],
       mood: ['깔끔한'],
     },
-    imageUrl: '/4k-streaming-webcam.jpg',
-    description: '전문가용 4K 화질과 노이즈 캔슬 마이크 탑재',
+    tagsFlat: [],
   },
   {
-    id: '11',
+    product_id: 11,
+    product_t_id: null,
+    seller_id: 111,
+    category_id: 2,
     name: '블루투스 스피커 데스크용',
-    category: '전자기기',
+    short_desc: '데스크 환경에 최적화된 컴팩트 블루투스 스피커',
     price: 79000,
-    originalPrice: 99000,
+    cost_price: 99000,
+    status: 'SOLD_OUT',
+    created_dt: '2024-05-26T09:00:00Z',
+    updated_dt: '2024-06-02T10:00:00Z',
+    productCategory: 'computer',
     popularity: 90,
     salesVolume: 1128,
+    imageUrl: '/bluetooth-desk-speaker.jpg',
     tags: {
       space: ['홈카페', '거실'],
       tone: ['우드톤'],
       situation: ['휴식'],
       mood: ['감성', '따뜻한'],
     },
-    imageUrl: '/bluetooth-desk-speaker.jpg',
-    description: '데스크 환경에 최적화된 컴팩트 블루투스 스피커',
+    tagsFlat: [],
   },
   {
-    id: '12',
+    product_id: 12,
+    product_t_id: null,
+    seller_id: 112,
+    category_id: 3,
     name: '모니터 암 듀얼 거치대',
-    category: '악세서리',
+    short_desc: '듀얼 모니터를 안정적으로 지지하는 가스 스프링 암',
     price: 129000,
-    originalPrice: 169000,
+    cost_price: 169000,
+    status: 'READY',
+    created_dt: '2024-06-10T09:00:00Z',
+    updated_dt: '2024-06-16T10:00:00Z',
+    productCategory: 'accessory',
     popularity: 96,
     salesVolume: 987,
+    imageUrl: '/dual-monitor-arm.jpg',
     tags: {
       space: ['오피스', '서재'],
       tone: ['블랙', '모던'],
       situation: ['재택근무', '영상편집'],
       mood: ['집중', '시크'],
     },
-    imageUrl: '/dual-monitor-arm.jpg',
-    description: '듀얼 모니터를 안정적으로 지지하는 가스 스프링 암',
+    tagsFlat: [],
   },
-]
+].map<DbProduct>((product) => ({
+  ...product,
+  status: product.status as ProductStatus,
+  productCategory: product.productCategory as DbProduct['productCategory'],
+  tagsFlat: flattenTags(product.tags),
+  popularity: product.popularity ?? 0,
+  salesVolume: product.salesVolume ?? 0,
+  imageUrl: product.imageUrl ?? '/placeholder-product.jpg',
+}))

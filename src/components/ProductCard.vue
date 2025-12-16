@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const props = defineProps<{
-  id?: string
+  id: string | number
   name: string
   imageUrl: string
   price: number
@@ -21,25 +22,23 @@ const discountRate = computed(() => {
 </script>
 
 <template>
-  <article class="card">
-    <div class="thumb">
-      <img :src="props.imageUrl" :alt="props.name" />
-      <span v-if="discountRate > 0" class="badge">-{{ discountRate }}%</span>
-    </div>
-    <div class="body">
-      <h3>{{ props.name }}</h3>
-      <div v-if="props.tags?.length" class="tags">
-        <span v-for="tag in props.tags.slice(0, 2)" :key="tag" class="tag">#{{ tag }}</span>
-        <span v-if="props.tags.length > 2" class="tag tag--more">+{{ props.tags.length - 2 }}</span>
+  <RouterLink :to="`/products/${props.id}`" class="card-link">
+    <article class="card">
+      <div class="thumb">
+        <img :src="props.imageUrl" :alt="props.name" />
+        <span v-if="discountRate > 0" class="badge">-{{ discountRate }}%</span>
       </div>
-      <div class="price-row">
-        <p class="price">{{ formatPrice(props.price) }}</p>
-        <p v-if="discountRate > 0 && props.originalPrice" class="original">
-          {{ formatPrice(props.originalPrice) }}
-        </p>
+      <div class="body">
+        <h3>{{ props.name }}</h3>
+        <div class="price-row">
+          <p class="price">{{ formatPrice(props.price) }}</p>
+          <p v-if="discountRate > 0 && props.originalPrice" class="original">
+            {{ formatPrice(props.originalPrice) }}
+          </p>
+        </div>
       </div>
-    </div>
-  </article>
+    </article>
+  </RouterLink>
 </template>
 
 <style scoped>
@@ -55,7 +54,13 @@ const discountRate = computed(() => {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.card:hover {
+.card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.card-link:hover .card {
   transform: translateY(-3px);
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.1);
 }
@@ -92,8 +97,9 @@ const discountRate = computed(() => {
   padding: 12px 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
+  height: 100%;
   min-height: 120px;
 }
 
@@ -105,26 +111,6 @@ h3 {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.tags {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.tag {
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: var(--surface-weak);
-  color: var(--text-muted);
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-
-.tag--more {
-  background: rgba(15, 23, 42, 0.06);
-  color: var(--text-soft);
 }
 
 .price-row {

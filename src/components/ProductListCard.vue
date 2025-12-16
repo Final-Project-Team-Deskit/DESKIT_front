@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import type { ProductTags } from '../lib/products-data'
 
 const props = defineProps<{
   id: string
@@ -9,18 +8,10 @@ const props = defineProps<{
   imageUrl: string
   price: number
   originalPrice?: number
-  tags?: ProductTags
   description?: string
 }>()
 
 const formatPrice = (value: number) => value.toLocaleString('ko-KR') + '원'
-
-const flatTags = computed(() => {
-  if (!props.tags) return []
-  const order: (keyof ProductTags)[] = ['space', 'tone', 'situation', 'mood']
-  const combined = order.flatMap((key) => props.tags?.[key] ?? [])
-  return Array.from(new Set(combined))
-})
 
 const discountRate = computed(() => {
   if (!props.originalPrice || props.originalPrice <= props.price) return 0
@@ -40,9 +31,6 @@ const discountRate = computed(() => {
       <div class="price-row">
         <p class="price">{{ formatPrice(props.price) }}</p>
         <p v-if="discountRate > 0 && props.originalPrice" class="original">{{ formatPrice(props.originalPrice) }}</p>
-      </div>
-      <div v-if="flatTags.length" class="tags">
-        <span v-for="tag in flatTags" :key="tag" class="tag">#{{ tag }}</span>
       </div>
     </div>
   </RouterLink>
@@ -68,7 +56,7 @@ const discountRate = computed(() => {
 }
 
 .thumb {
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 10;
   background: var(--surface-weak);
   position: relative;
 }
@@ -84,7 +72,8 @@ const discountRate = computed(() => {
   padding: 14px 15px 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  flex: 1;
 }
 
 h3 {
@@ -110,6 +99,7 @@ h3 {
   display: flex;
   align-items: baseline;
   gap: 8px;
+  margin-top: auto;
 }
 
 .original {
@@ -117,13 +107,6 @@ h3 {
   color: var(--text-soft);
   font-size: 0.95rem;
   text-decoration: line-through;
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
 }
 
 .badge {
@@ -139,12 +122,4 @@ h3 {
   box-shadow: 0 10px 18px rgba(255, 127, 80, 0.3);
 }
 
-.tag {
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: var(--surface-weak);
-  color: var(--text-muted);
-  font-weight: 700;
-  font-size: 0.9rem;
-}
 </style>

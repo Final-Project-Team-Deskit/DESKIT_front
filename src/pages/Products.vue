@@ -5,6 +5,7 @@ import SortTabs, { type SortOption } from '../components/SortTabs.vue'
 import TagChipsFilter from '../components/TagChipsFilter.vue'
 import ProductListCard from '../components/ProductListCard.vue'
 import { productsData } from '../lib/products-data'
+import { mapProducts } from '../lib/products-mapper'
 
 const route = useRoute()
 
@@ -41,7 +42,7 @@ const categoryLabel = computed(() => {
   return categoryMap[key] ?? value.toString()
 })
 
-const baseProducts = computed(() => productsData.map((product, index) => ({ ...product, order: index })))
+const baseProducts = computed(() => mapProducts(productsData))
 
 const availableTags = computed<TagSelection>(() => {
   const tagSets: Record<TagKey, Set<string>> = {
@@ -50,7 +51,7 @@ const availableTags = computed<TagSelection>(() => {
     situation: new Set(),
     mood: new Set(),
   }
-  productsData.forEach((product) => {
+  baseProducts.value.forEach((product) => {
     tagKeys.forEach((key) => {
       product.tags[key].forEach((tag) => tagSets[key].add(tag))
     })
@@ -70,7 +71,7 @@ const filteredProducts = computed(() => {
   if (categoryLabel.value) {
     result = result.filter((product) => product.category === categoryLabel.value)
   } else if (productCategory.value !== 'all') {
-    result = result.filter((product) => product.category === productCategory.value)
+    result = result.filter((product) => product.productCategory === productCategory.value)
   }
 
   result = result.filter((product) =>
@@ -142,7 +143,7 @@ const filteredProducts = computed(() => {
             :name="product.name"
             :image-url="product.imageUrl"
             :price="product.price"
-            :tags="product.tags"
+            :original-price="product.originalPrice"
             :description="product.description"
           />
         </div>
