@@ -11,6 +11,7 @@ import { productsData } from '../lib/products-data'
 const route = useRoute()
 
 const sortBy = ref<SortOption>('ranking')
+const productCategory = ref<'all' | 'furniture' | 'computer' | 'accessory'>('all')
 const tagKeys = ['space', 'tone', 'situation', 'mood'] as const
 type TagKey = (typeof tagKeys)[number]
 type TagSelection = Record<TagKey, string[]>
@@ -70,6 +71,8 @@ const filteredProducts = computed(() => {
 
   if (categoryLabel.value) {
     result = result.filter((product) => product.category === categoryLabel.value)
+  } else if (productCategory.value !== 'all') {
+    result = result.filter((product) => product.category === productCategory.value)
   }
 
   result = result.filter((product) =>
@@ -133,6 +136,7 @@ const breadcrumbItems = computed(() => {
         <TagChipsFilter
           v-model="selectedTags"
           :available-tags="availableTags"
+          @update:productCategory="productCategory = $event"
         />
       </section>
 

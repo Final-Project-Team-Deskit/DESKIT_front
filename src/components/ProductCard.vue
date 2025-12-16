@@ -1,26 +1,43 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 const props = defineProps<{
   id?: string
   name: string
   imageUrl: string
   price: number
-  discountRate?: number
+  originalPrice?: number
+  tags?: string[]
 }>()
 
 const formatPrice = (value: number) => {
   return value.toLocaleString('ko-KR') + '원'
 }
+
+const discountRate = computed(() => {
+  if (!props.originalPrice || props.originalPrice <= props.price) return 0
+  return Math.round((1 - props.price / props.originalPrice) * 100)
+})
 </script>
 
 <template>
   <article class="card">
     <div class="thumb">
       <img :src="props.imageUrl" :alt="props.name" />
-      <span v-if="props.discountRate" class="badge">-{{ props.discountRate }}%</span>
+      <span v-if="discountRate > 0" class="badge">-{{ discountRate }}%</span>
     </div>
     <div class="body">
       <h3>{{ props.name }}</h3>
-      <p class="price">{{ formatPrice(props.price) }}</p>
+      <div v-if="props.tags?.length" class="tags">
+        <span v-for="tag in props.tags.slice(0, 2)" :key="tag" class="tag">#{{ tag }}</span>
+        <span v-if="props.tags.length > 2" class="tag tag--more">+{{ props.tags.length - 2 }}</span>
+      </div>
+      <div class="price-row">
+        <p class="price">{{ formatPrice(props.price) }}</p>
+        <p v-if="discountRate > 0 && props.originalPrice" class="original">
+          {{ formatPrice(props.originalPrice) }}
+        </p>
+      </div>
     </div>
   </article>
 </template>
@@ -29,7 +46,7 @@ const formatPrice = (value: number) => {
 .card {
   display: flex;
   flex-direction: column;
-  height: 380px;
+  height: 100%;
   background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: 14px;
@@ -77,6 +94,7 @@ const formatPrice = (value: number) => {
   flex-direction: column;
   gap: 6px;
   flex: 1;
+  min-height: 120px;
 }
 
 h3 {
@@ -89,12 +107,47 @@ h3 {
   overflow: hidden;
 }
 
+.tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--surface-weak);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.tag--more {
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--text-soft);
+}
+
+.price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: auto;
+}
+
 .price {
   margin: 0;
   color: #0ea5e9;
   font-weight: 800;
+  font-size: 1.05rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.original {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  text-decoration: line-through;
 }
 </style>

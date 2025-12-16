@@ -70,10 +70,8 @@ const handleWatchNow = () => {
   border: 1px solid var(--border-color);
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease;
-  min-height: 300px;
-  max-height: 340px;
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: minmax(300px, 360px) 1fr;
   column-gap: 2px;
 }
 
@@ -222,8 +220,6 @@ h3 {
 @media (max-width: 1080px) {
   .card {
     grid-template-columns: 1fr;
-    min-height: 260px;
-    max-height: none;
   }
 }
 </style>

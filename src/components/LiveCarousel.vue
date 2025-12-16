@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { Swiper, SwiperSlide } from 'swiper/vue'
-import { Autoplay, Pagination, Navigation, EffectCoverflow } from 'swiper/modules'
+import { Autoplay, Pagination, Navigation } from 'swiper/modules'
 
 import 'swiper/css'
 import 'swiper/css/pagination'
 import 'swiper/css/navigation'
-import 'swiper/css/effect-coverflow'
 
 import LiveCard from './LiveCard.vue'
 import type { LiveItem } from '../lib/home-data'
@@ -14,7 +13,7 @@ defineProps<{
   items: LiveItem[]
 }>()
 
-const modules = [Autoplay, Pagination, Navigation, EffectCoverflow]
+const modules = [Autoplay, Pagination, Navigation]
 </script>
 
 <template>
@@ -38,14 +37,6 @@ const modules = [Autoplay, Pagination, Navigation, EffectCoverflow]
         v-if="items.length"
         class="live-swiper"
         :modules="modules"
-        effect="coverflow"
-        :coverflow-effect="{
-          rotate: 0,
-          stretch: 80,
-          depth: 120,
-          modifier: 0.9,
-          slideShadows: false,
-        }"
         :centered-slides="true"
         :slides-per-view="'auto'"
         :space-between="28"
@@ -72,9 +63,11 @@ const modules = [Autoplay, Pagination, Navigation, EffectCoverflow]
 <style scoped>
 .live-carousel {
   position: relative;
-  padding: 0 64px 40px;
+  padding: 0 clamp(12px, 3vw, 48px) 40px;
+  max-width: 100%;
   overflow-x: clip;
   overflow-y: visible;
+  width: 100%;
 }
 
 /* 핵심: 옆 카드 “살짝 보이게” */
@@ -85,24 +78,10 @@ const modules = [Autoplay, Pagination, Navigation, EffectCoverflow]
 
 /* ✅ 한 번에 3장 보이는 느낌의 핵심: 슬라이드 폭을 크게 잡고 centeredSlides + overflow visible */
 .live-slide {
-  width: 860px;
+  width: clamp(520px, 72vw, 860px);
 }
 
-/* 반응형: 화면 줄면 자연스럽게 줄이기 */
-@media (max-width: 1200px) {
-  .live-slide {
-    width: 760px;
-  }
-}
-@media (max-width: 900px) {
-  .live-slide {
-    width: 640px;
-  }
-}
-@media (max-width: 640px) {
-  .live-carousel {
-    padding: 0 14px 28px;
-  }
+@media (max-width: 520px) {
   .live-slide {
     width: 92vw;
   }

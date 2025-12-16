@@ -14,6 +14,12 @@ const props = defineProps<{
 }>()
 
 const modules = [Autoplay, Navigation, Pagination]
+
+const flattenTags = (tags?: ProductItem['tags']) => {
+  if (!tags) return []
+  const order: (keyof ProductItem['tags'])[] = ['space', 'tone', 'situation', 'mood']
+  return order.flatMap((key) => tags[key] ?? [])
+}
 </script>
 
 <template>
@@ -46,6 +52,7 @@ const modules = [Autoplay, Navigation, Pagination]
           prevEl: '.product-prev',
         }"
         :pagination="{ clickable: true }"
+        :watch-overflow="true"
         :autoplay="false"
         :breakpoints="{
           0: { slidesPerView: 1.1, spaceBetween: 14 },
@@ -55,7 +62,10 @@ const modules = [Autoplay, Navigation, Pagination]
         }"
       >
         <SwiperSlide v-for="item in props.items" :key="item.id">
-          <ProductCard v-bind="item" />
+          <ProductCard
+            v-bind="item"
+            :tags="flattenTags(item.tags)"
+          />
         </SwiperSlide>
       </Swiper>
     </div>
@@ -65,7 +75,9 @@ const modules = [Autoplay, Navigation, Pagination]
 <style scoped>
 .carousel {
   position: relative;
-  padding: 8px 48px 40px;
+  padding: 8px clamp(12px, 3vw, 48px) 40px;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .viewport {
@@ -75,6 +87,7 @@ const modules = [Autoplay, Navigation, Pagination]
 
 .swiper-shell {
   padding-bottom: 12px;
+  overflow: hidden;
 }
 
 :deep(.swiper-wrapper) {

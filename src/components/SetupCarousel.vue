@@ -38,14 +38,15 @@ const modules = [Autoplay, Navigation, Pagination]
         class="swiper-shell"
         :modules="modules"
         :loop="true"
-      :slides-per-view="2"
-      :space-between="22"
+        :slides-per-view="2"
+        :space-between="22"
         :centered-slides="false"
         :navigation="{
           nextEl: '.setup-next',
           prevEl: '.setup-prev',
         }"
         :pagination="{ clickable: true }"
+        :watch-overflow="true"
         :autoplay="false"
         :breakpoints="{
         0: { slidesPerView: 1.05, spaceBetween: 14 },
@@ -65,7 +66,9 @@ const modules = [Autoplay, Navigation, Pagination]
 <style scoped>
 .carousel {
   position: relative;
-  padding: 8px 48px 40px;
+  padding: 8px clamp(12px, 3vw, 48px) 40px;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .viewport {
@@ -74,7 +77,7 @@ const modules = [Autoplay, Navigation, Pagination]
 }
 
 .swiper-shell {
-  overflow: visible;
+  overflow: hidden;
   padding-bottom: 12px;
 }
 

@@ -8,6 +8,7 @@ const props = defineProps<{
   name: string
   imageUrl: string
   price: number
+  originalPrice?: number
   tags?: ProductTags
   description?: string
 }>()
@@ -20,17 +21,26 @@ const flatTags = computed(() => {
   const combined = order.flatMap((key) => props.tags?.[key] ?? [])
   return Array.from(new Set(combined))
 })
+
+const discountRate = computed(() => {
+  if (!props.originalPrice || props.originalPrice <= props.price) return 0
+  return Math.round((1 - props.price / props.originalPrice) * 100)
+})
 </script>
 
 <template>
   <RouterLink :to="`/products/${props.id}`" class="card">
     <div class="thumb">
       <img :src="props.imageUrl" :alt="props.name" />
+      <span v-if="discountRate > 0" class="badge">-{{ discountRate }}%</span>
     </div>
     <div class="body">
       <h3>{{ props.name }}</h3>
       <p v-if="props.description" class="desc">{{ props.description }}</p>
-      <p class="price">{{ formatPrice(props.price) }}</p>
+      <div class="price-row">
+        <p class="price">{{ formatPrice(props.price) }}</p>
+        <p v-if="discountRate > 0 && props.originalPrice" class="original">{{ formatPrice(props.originalPrice) }}</p>
+      </div>
       <div v-if="flatTags.length" class="tags">
         <span v-for="tag in flatTags" :key="tag" class="tag">#{{ tag }}</span>
       </div>
@@ -60,6 +70,7 @@ const flatTags = computed(() => {
 .thumb {
   aspect-ratio: 4 / 3;
   background: var(--surface-weak);
+  position: relative;
 }
 
 .thumb img {
@@ -95,11 +106,37 @@ h3 {
   font-weight: 800;
 }
 
+.price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.original {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  text-decoration: line-through;
+}
+
 .tags {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 4px;
+}
+
+.badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--primary-color);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  box-shadow: 0 10px 18px rgba(255, 127, 80, 0.3);
 }
 
 .tag {

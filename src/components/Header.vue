@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter()
 const isScrolled = ref(false)
+const isMenuOpen = ref(false)
+const panelRef = ref<HTMLElement | null>(null)
 
 const navLinks = [
   { label: '상품', to: '/products' },
@@ -13,23 +16,72 @@ const navLinks = [
 
 const actionLinks = [
   { label: '장바구니', to: '/cart', icon: 'cart' },
-  { label: '마이페이지', to: '/account', icon: 'user' },
+  { label: '마이페이지', to: '/mypage', icon: 'user' },
 ]
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 8
 }
 
+const handleDocumentClick = (event: MouseEvent) => {
+  if (!isMenuOpen.value) return
+  const target = event.target as Node
+  if (panelRef.value && panelRef.value.contains(target)) return
+  closeMenu()
+}
+
 onMounted(() => {
   handleScroll()
   window.addEventListener('scroll', handleScroll, { passive: true })
+  window.addEventListener('keydown', onKeydown)
+  document.addEventListener('click', handleDocumentClick)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('keydown', onKeydown)
+  document.removeEventListener('click', handleDocumentClick)
 })
 
 const isLiveActive = computed(() => route.path.startsWith('/live'))
+
+const closeMenu = () => {
+  isMenuOpen.value = false
+}
+
+const toggleMenu = () => {
+  isMenuOpen.value = !isMenuOpen.value
+}
+
+const onKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    closeMenu()
+  }
+}
+
+watch(
+  () => route.fullPath,
+  () => {
+    closeMenu()
+  },
+)
+
+watch(isMenuOpen, (open) => {
+  const body = document.body
+  if (open) {
+    body.classList.add('no-scroll')
+  } else {
+    body.classList.remove('no-scroll')
+  }
+})
+
+const searchQuery = ref('')
+
+const submitSearch = () => {
+  const q = searchQuery.value.trim()
+  router.push({ path: '/products', query: q ? { q } : undefined })
+  closeMenu()
+}
 </script>
 
 <template>
@@ -61,7 +113,7 @@ const isLiveActive = computed(() => route.path.startsWith('/live'))
       </div>
 
       <div class="right">
-        <div class="search">
+        <form class="search search--desktop" @submit.prevent="submitSearch">
           <svg class="search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path
               d="M11 4a7 7 0 015.657 11.045l3.149 3.148-1.414 1.414-3.148-3.149A7 7 0 1111 4z"
@@ -71,8 +123,8 @@ const isLiveActive = computed(() => route.path.startsWith('/live'))
               stroke-linejoin="round"
             />
           </svg>
-          <input class="search__input" type="search" placeholder="상품 또는 셋업 검색" />
-        </div>
+          <input v-model="searchQuery" class="search__input" type="search" placeholder="검색어를 입력하세요" />
+        </form>
         <div class="actions">
           <RouterLink
             v-for="action in actionLinks"
@@ -109,9 +161,84 @@ const isLiveActive = computed(() => route.path.startsWith('/live'))
             </svg>
             <span>{{ action.label }}</span>
           </RouterLink>
+          <button
+            type="button"
+            class="icon-btn menu-btn"
+            aria-label="메뉴"
+            :aria-expanded="isMenuOpen"
+            aria-controls="mobile-menu"
+            @click.stop="toggleMenu"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
+
+    <transition name="fade">
+      <div v-if="isMenuOpen" class="overlay" @click="closeMenu" />
+    </transition>
+    <transition name="slide-down">
+      <div
+        v-if="isMenuOpen"
+        id="mobile-menu"
+        class="mobile-menu"
+        role="dialog"
+        aria-label="모바일 메뉴"
+        ref="panelRef"
+      >
+        <form class="search search--mobile" @submit.prevent="submitSearch">
+          <svg class="search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M11 4a7 7 0 015.657 11.045l3.149 3.148-1.414 1.414-3.148-3.149A7 7 0 1111 4z"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <input
+            v-model="searchQuery"
+            class="search__input"
+            type="search"
+            placeholder="검색어를 입력하세요"
+          />
+        </form>
+        <div class="mobile-menu__header">
+          <span class="mobile-menu__title">메뉴</span>
+          <button type="button" class="icon-btn" aria-label="메뉴 닫기" @click="closeMenu">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+        <nav class="mobile-menu__nav">
+          <RouterLink
+            v-for="item in navLinks"
+            :key="item.to"
+            :to="item.to"
+            class="mobile-menu__link"
+            @click="closeMenu"
+          >
+            {{ item.label }}
+            <span v-if="item.to === '/live'" class="live-pill live-pill--inline">LIVE</span>
+          </RouterLink>
+        </nav>
+        <div class="mobile-menu__actions">
+          <RouterLink
+            v-for="action in actionLinks"
+            :key="action.to"
+            :to="action.to"
+            class="mobile-menu__link"
+            @click="closeMenu"
+          >
+            {{ action.label }}
+          </RouterLink>
+        </div>
+      </div>
+    </transition>
   </header>
 </template>
 
@@ -124,6 +251,7 @@ const isLiveActive = computed(() => route.path.startsWith('/live'))
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(12px);
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  --header-height: 66px;
 }
 
 .container {
@@ -145,7 +273,7 @@ const isLiveActive = computed(() => route.path.startsWith('/live'))
 .left {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 32px;
   flex-shrink: 1;
   min-width: 0;
 }
@@ -154,6 +282,7 @@ const isLiveActive = computed(() => route.path.startsWith('/live'))
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  margin-right: 4px;
 }
 
 .brand__logo {
@@ -251,7 +380,7 @@ const isLiveActive = computed(() => route.path.startsWith('/live'))
 
 .search {
   position: relative;
-  width: clamp(220px, 28vw, 420px);
+  width: clamp(260px, 30vw, 360px);
   flex: 0 1 auto;
 }
 
@@ -308,28 +437,180 @@ const isLiveActive = computed(() => route.path.startsWith('/live'))
   transform: translateY(-1px);
 }
 
-@media (max-width: 900px) {
+.icon-btn {
+  border: 1px solid var(--border-color);
+  background: #fff;
+  color: var(--text-muted);
+  padding: 8px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.icon-btn:hover {
+  color: var(--text-strong);
+  background: var(--surface-weak);
+  border-color: rgba(255, 127, 80, 0.5);
+  transform: translateY(-1px);
+}
+
+.search-btn,
+.menu-btn {
+  display: none;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 9;
+}
+
+.mobile-menu {
+  position: fixed;
+  top: var(--header-height, 64px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.14);
+  z-index: 11;
+  padding: 12px 16px 16px;
+  max-height: calc(100vh - var(--header-height, 64px));
+  overflow-y: auto;
+}
+
+.mobile-menu form {
+  margin-bottom: 10px;
+}
+
+.search--mobile {
+  width: 100%;
+}
+
+.search--mobile .search__input {
+  min-height: 44px;
+}
+
+.mobile-menu__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.mobile-menu__title {
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+.mobile-menu__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mobile-menu__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.mobile-menu__link {
+  padding: 12px 10px;
+  border-radius: 10px;
+  color: var(--primary-color);
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s ease, color 0.2s ease;
+  min-height: 44px;
+}
+
+.mobile-menu__link:hover {
+  background: var(--surface-weak);
+  color: var(--primary-color);
+}
+
+.mobile-menu__actions .mobile-menu__link {
+  color: var(--text-soft);
+  font-weight: 700;
+  font-size: 0.95rem;
+  background: transparent;
+}
+
+.mobile-menu__actions .mobile-menu__link:hover {
+  color: var(--primary-color);
+}
+
+.live-pill--inline {
+  padding: 4px 6px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
+:global(body.no-scroll) {
+  overflow: hidden;
+}
+
+@media (max-width: 1023px) {
   .container {
     gap: 12px;
   }
 
   .search {
-    min-width: 0;
-    flex: 1;
+    width: clamp(200px, 24vw, 320px);
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 899px) {
+  .header {
+    --header-height: 60px;
+  }
+
   .container {
     padding: 10px 14px;
+    gap: 10px;
   }
 
-  .brand__accent {
+  .brand__logo {
+    height: 28px;
+  }
+
+  .nav {
     display: none;
   }
 
-  .search {
+  .search--desktop {
     display: none;
+  }
+
+  .menu-btn {
+    display: inline-flex;
   }
 
   .actions {
@@ -337,8 +618,11 @@ const isLiveActive = computed(() => route.path.startsWith('/live'))
   }
 
   .action-link {
-    padding: 6px 8px;
-    font-size: 0.95rem;
+    display: none;
+  }
+
+  .search--mobile .search__input {
+    width: 100%;
   }
 }
 </style>

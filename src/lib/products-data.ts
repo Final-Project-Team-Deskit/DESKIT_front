@@ -3,6 +3,7 @@ export type Product = {
   name: string
   category: string
   price: number
+  originalPrice: number
   popularity: number
   salesVolume: number
   tags: ProductTags
@@ -23,6 +24,7 @@ export const productsData: Product[] = [
     name: '에르고노믹 메쉬 체어 프리미엄',
     category: '가구',
     price: 289000,
+    originalPrice: 359000,
     popularity: 96,
     salesVolume: 1247,
     tags: {
@@ -39,6 +41,7 @@ export const productsData: Product[] = [
     name: 'USB-C 도킹 스테이션 11포트',
     category: '전자기기',
     price: 129000,
+    originalPrice: 169000,
     popularity: 92,
     salesVolume: 892,
     tags: {
@@ -55,6 +58,7 @@ export const productsData: Product[] = [
     name: '기계식 키보드 RGB 청축',
     category: '악세서리',
     price: 159000,
+    originalPrice: 189000,
     popularity: 98,
     salesVolume: 2156,
     tags: {
@@ -71,6 +75,7 @@ export const productsData: Product[] = [
     name: '무선 마우스 게이밍 프로',
     category: '악세서리',
     price: 89000,
+    originalPrice: 119000,
     popularity: 94,
     salesVolume: 1523,
     tags: {
@@ -87,6 +92,7 @@ export const productsData: Product[] = [
     name: '27인치 4K 모니터 IPS',
     category: '전자기기',
     price: 449000,
+    originalPrice: 599000,
     popularity: 96,
     salesVolume: 756,
     tags: {
@@ -103,6 +109,7 @@ export const productsData: Product[] = [
     name: 'LED 데스크 라이트 조명',
     category: '악세서리',
     price: 59000,
+    originalPrice: 79000,
     popularity: 90,
     salesVolume: 2341,
     tags: {
@@ -119,6 +126,7 @@ export const productsData: Product[] = [
     name: '스탠딩 데스크 전동 높이조절',
     category: '가구',
     price: 589000,
+    originalPrice: 799000,
     popularity: 98,
     salesVolume: 412,
     tags: {
@@ -135,6 +143,7 @@ export const productsData: Product[] = [
     name: '노트북 거치대 알루미늄',
     category: '악세서리',
     price: 45000,
+    originalPrice: 65000,
     popularity: 92,
     salesVolume: 1876,
     tags: {
@@ -151,6 +160,7 @@ export const productsData: Product[] = [
     name: '케이블 정리 박스 세트',
     category: '악세서리',
     price: 29000,
+    originalPrice: 39000,
     popularity: 88,
     salesVolume: 3214,
     tags: {
@@ -167,6 +177,7 @@ export const productsData: Product[] = [
     name: '웹캠 4K 스트리밍 프로',
     category: '전자기기',
     price: 189000,
+    originalPrice: 239000,
     popularity: 94,
     salesVolume: 634,
     tags: {
@@ -183,6 +194,7 @@ export const productsData: Product[] = [
     name: '블루투스 스피커 데스크용',
     category: '전자기기',
     price: 79000,
+    originalPrice: 99000,
     popularity: 90,
     salesVolume: 1128,
     tags: {
@@ -199,6 +211,7 @@ export const productsData: Product[] = [
     name: '모니터 암 듀얼 거치대',
     category: '악세서리',
     price: 129000,
+    originalPrice: 169000,
     popularity: 96,
     salesVolume: 987,
     tags: {

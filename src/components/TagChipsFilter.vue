@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+
 type TagCategoryKey = 'space' | 'tone' | 'situation' | 'mood'
+type ProductCategoryKey = 'all' | 'furniture' | 'computer' | 'accessory'
 
 type TagCategoryMap = Record<TagCategoryKey, string[]>
 
@@ -10,6 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: TagCategoryMap): void
+  (e: 'update:productCategory', value: ProductCategoryKey): void
 }>()
 
 const categories: { key: TagCategoryKey; label: string }[] = [
@@ -18,6 +22,21 @@ const categories: { key: TagCategoryKey; label: string }[] = [
   { key: 'situation', label: '상황' },
   { key: 'mood', label: '무드' },
 ]
+
+const tabs = [
+  { key: 'all', label: '전체' },
+  ...categories,
+] as const
+
+const productTabs = [
+  { key: 'all', label: '전체' },
+  { key: 'furniture', label: '가구' },
+  { key: 'computer', label: '컴퓨터' },
+  { key: 'accessory', label: '악세서리' },
+] as const
+
+const activeCategory = ref<'all' | TagCategoryKey>('all')
+const activeProductCategory = ref<ProductCategoryKey>('all')
 
 const toggle = (category: TagCategoryKey, tag: string) => {
   const current = props.modelValue[category]
@@ -35,30 +54,78 @@ const clearAll = () => {
 }
 
 const isSelected = (category: TagCategoryKey, tag: string) => props.modelValue[category].includes(tag)
+
+const currentTags = computed(() => {
+  if (activeCategory.value === 'all') return []
+  return props.availableTags[activeCategory.value].map((tag) => ({
+    category: activeCategory.value as TagCategoryKey,
+    tag,
+  }))
+})
 </script>
 
 <template>
   <div class="filter">
-    <div class="filter__header">
-      <span class="filter__title">태그 그룹</span>
+    <div class="top-row">
+      <div class="tabs" role="tablist">
+        <button
+          v-for="tab in tabs"
+          :key="tab.key"
+          type="button"
+          class="tab"
+          :class="{ 'tab--active': activeCategory === tab.key }"
+          role="tab"
+          :aria-selected="activeCategory === tab.key"
+          @click="
+            () => {
+              activeCategory = tab.key as any
+              if (activeCategory !== 'all') {
+                activeProductCategory = 'all'
+                emit('update:productCategory', 'all')
+              }
+            }
+          "
+        >
+          {{ tab.label }}
+        </button>
+      </div>
       <button class="clear" type="button" @click="clearAll">전체 해제</button>
     </div>
-    <div class="groups">
-      <section v-for="category in categories" :key="category.key" class="group">
-        <header class="group__header">{{ category.label }}</header>
-        <div class="chips">
-          <button
-            v-for="tag in props.availableTags[category.key]"
-            :key="tag"
-            type="button"
-            :class="['chip', { 'chip--active': isSelected(category.key, tag) }]"
-            @click="toggle(category.key, tag)"
-          >
-            {{ tag }}
-          </button>
-          <p v-if="!props.availableTags[category.key]?.length" class="empty">태그 없음</p>
-        </div>
-      </section>
+
+    <div v-if="activeCategory === 'all'" class="product-tabs" role="tablist">
+      <button
+        v-for="pTab in productTabs"
+        :key="pTab.key"
+        type="button"
+        class="tab tab--product"
+        :class="{ 'tab--active': activeProductCategory === pTab.key }"
+        role="tab"
+        :aria-selected="activeProductCategory === pTab.key"
+        @click="
+          () => {
+            activeProductCategory = pTab.key as any
+            emit('update:productCategory', activeProductCategory)
+          }
+        "
+      >
+        {{ pTab.label }}
+      </button>
+    </div>
+
+    <div class="chips-row" :class="{ 'chips-row--empty': activeCategory === 'all' }">
+      <template v-if="activeCategory !== 'all'">
+        <button
+          v-for="item in currentTags"
+          :key="`${item.category}-${item.tag}`"
+          type="button"
+          :class="['chip', { 'chip--active': isSelected(item.category, item.tag) }]"
+          @click="toggle(item.category, item.tag)"
+        >
+          {{ item.tag }}
+        </button>
+        <p v-if="currentTags.length === 0" class="empty">태그 없음</p>
+      </template>
+      <p v-else class="hint">카테고리를 선택하면 태그가 표시됩니다.</p>
     </div>
   </div>
 </template>
@@ -68,19 +135,15 @@ const isSelected = (category: TagCategoryKey, tag: string) => props.modelValue[c
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 6px 0;
 }
 
-.filter__header {
+.top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
-}
-
-.filter__title {
-  color: var(--text-soft);
-  font-weight: 800;
-  letter-spacing: 0.01em;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .clear {
@@ -88,7 +151,7 @@ const isSelected = (category: TagCategoryKey, tag: string) => props.modelValue[c
   background: #fff;
   color: var(--text-muted);
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: 999px;
   cursor: pointer;
   font-weight: 700;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
@@ -100,35 +163,69 @@ const isSelected = (category: TagCategoryKey, tag: string) => props.modelValue[c
   background: rgba(255, 127, 80, 0.06);
 }
 
-.groups {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-}
-
-.group {
+.tabs {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  white-space: nowrap;
 }
 
-.group__header {
-  font-weight: 800;
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  border: 1px solid #e5e7eb;
+  background: #fff;
   color: var(--text-strong);
-  letter-spacing: 0.01em;
+  padding: 10px 16px;
+  min-height: 40px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.chips {
+.tab--active {
+  border-color: rgba(255, 127, 80, 0.6);
+  color: var(--primary-color);
+  background: rgba(255, 127, 80, 0.12);
+}
+
+.product-tabs {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  white-space: nowrap;
+}
+
+.tab--product {
+  min-height: 34px;
+  padding: 8px 14px;
+}
+
+.chips-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
+  min-height: 34px;
+  padding-top: 6px;
+}
+
+.chips-row--empty {
+  min-height: 32px;
 }
 
 .chip {
-  border: 1px solid var(--border-color);
+  border: 1px solid #e5e7eb;
   background: #fff;
   color: var(--text-muted);
-  padding: 9px 14px;
+  padding: 8px 12px;
+  min-height: 34px;
   border-radius: 999px;
   cursor: pointer;
   font-weight: 700;
@@ -145,7 +242,6 @@ const isSelected = (category: TagCategoryKey, tag: string) => props.modelValue[c
   background: rgba(255, 127, 80, 0.12);
   color: var(--primary-color);
   border-color: rgba(255, 127, 80, 0.6);
-  box-shadow: 0 8px 20px rgba(255, 127, 80, 0.15);
 }
 
 .empty {
@@ -154,9 +250,15 @@ const isSelected = (category: TagCategoryKey, tag: string) => props.modelValue[c
   font-weight: 600;
 }
 
+.hint {
+  margin: 0;
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
 @media (max-width: 600px) {
-  .groups {
-    grid-template-columns: 1fr;
+  .top-row {
+    gap: 10px;
   }
 }
 </style>

@@ -49,6 +49,7 @@ import ProductCarousel from '../components/ProductCarousel.vue'
   display: flex;
   flex-direction: column;
   gap: 28px;
+  overflow-x: clip;
 }
 
 .hero {
@@ -97,6 +98,15 @@ h1 {
   gap: 34px;
 }
 
+.page__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .section-head {
   display: flex;
   flex-direction: column;
@@ -112,6 +122,13 @@ h1 {
 @media (min-width: 960px) {
   h1 {
     font-size: 2.4rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .page__inner {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }
 </style>
