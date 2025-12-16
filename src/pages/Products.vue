@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import Breadcrumb from '../components/Breadcrumb.vue'
-import AdBannerCard from '../components/AdBannerCard.vue'
 import SortTabs, { type SortOption } from '../components/SortTabs.vue'
 import TagChipsFilter from '../components/TagChipsFilter.vue'
 import ProductListCard from '../components/ProductListCard.vue'
@@ -104,40 +102,31 @@ const filteredProducts = computed(() => {
   return sorted
 })
 
-const breadcrumbItems = computed(() => {
-  const items = [{ label: '상품', to: '/products' }]
-  if (categoryLabel.value) {
-    items.push({ label: categoryLabel.value, to: `/products?category=${encodeURIComponent(categoryLabel.value)}` })
-  }
-  return items
-})
 </script>
 
 <template>
   <main class="page">
     <div class="page__inner products">
-      <Breadcrumb :items="breadcrumbItems" />
-
-      <AdBannerCard />
-
       <header class="header-row">
         <div>
-          <p class="eyebrow">DESKIT COLLECTION</p>
           <h1 class="title">
             {{ categoryLabel ?? '상품' }}
             <span class="count">({{ filteredProducts.length }}개)</span>
           </h1>
         </div>
-        <SortTabs v-model="sortBy" />
       </header>
 
       <section class="filters">
-        <div class="filter-label">태그로 찾기</div>
+<!--        <div class="filter-label">태그로 찾기</div>-->
         <TagChipsFilter
           v-model="selectedTags"
           :available-tags="availableTags"
           @update:productCategory="productCategory = $event"
         />
+      </section>
+
+      <section class="sort-row">
+        <SortTabs v-model="sortBy" />
       </section>
 
       <section>
@@ -166,7 +155,7 @@ const breadcrumbItems = computed(() => {
 .products {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 16px;
 }
 
 .header-row {
@@ -175,7 +164,7 @@ const breadcrumbItems = computed(() => {
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 4px 2px 2px;
+  padding: 0 2px 0;
 }
 
 .eyebrow {
@@ -186,7 +175,7 @@ const breadcrumbItems = computed(() => {
 }
 
 .title {
-  margin: 8px 0 0;
+  margin: 4px 0 0;
   font-size: 1.95rem;
   font-weight: 800;
   letter-spacing: -0.4px;
@@ -203,7 +192,7 @@ const breadcrumbItems = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-radius: 14px;
   background: var(--surface);
   border: 1px solid var(--border-color);
@@ -214,6 +203,12 @@ const breadcrumbItems = computed(() => {
   color: var(--text-muted);
   font-weight: 800;
   letter-spacing: 0.01em;
+}
+
+.sort-row {
+  display: flex;
+  justify-content: flex-start;
+  margin: 10px 0 16px;
 }
 
 .grid {

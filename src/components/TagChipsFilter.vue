@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import {computed, ref} from 'vue'
 
 type TagCategoryKey = 'space' | 'tone' | 'situation' | 'mood'
 type ProductCategoryKey = 'all' | 'furniture' | 'computer' | 'accessory'
@@ -17,22 +17,15 @@ const emit = defineEmits<{
 }>()
 
 const categories: { key: TagCategoryKey; label: string }[] = [
-  { key: 'space', label: '공간' },
-  { key: 'tone', label: '톤' },
-  { key: 'situation', label: '상황' },
-  { key: 'mood', label: '무드' },
+  {key: 'space', label: '공간'},
+  {key: 'tone', label: '톤'},
+  {key: 'situation', label: '상황'},
+  {key: 'mood', label: '무드'},
 ]
 
 const tabs = [
-  { key: 'all', label: '전체' },
+  {key: 'all', label: '전체'},
   ...categories,
-] as const
-
-const productTabs = [
-  { key: 'all', label: '전체' },
-  { key: 'furniture', label: '가구' },
-  { key: 'computer', label: '컴퓨터' },
-  { key: 'accessory', label: '악세서리' },
 ] as const
 
 const activeCategory = ref<'all' | TagCategoryKey>('all')
@@ -41,7 +34,7 @@ const activeProductCategory = ref<ProductCategoryKey>('all')
 const toggle = (category: TagCategoryKey, tag: string) => {
   const current = props.modelValue[category]
   const nextCategoryTags = current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag]
-  emit('update:modelValue', { ...props.modelValue, [category]: nextCategoryTags })
+  emit('update:modelValue', {...props.modelValue, [category]: nextCategoryTags})
 }
 
 const clearAll = () => {
@@ -69,14 +62,14 @@ const currentTags = computed(() => {
     <div class="top-row">
       <div class="tabs" role="tablist">
         <button
-          v-for="tab in tabs"
-          :key="tab.key"
-          type="button"
-          class="tab"
-          :class="{ 'tab--active': activeCategory === tab.key }"
-          role="tab"
-          :aria-selected="activeCategory === tab.key"
-          @click="
+            v-for="tab in tabs"
+            :key="tab.key"
+            type="button"
+            class="tab"
+            :class="{ 'tab--active': activeCategory === tab.key }"
+            role="tab"
+            :aria-selected="activeCategory === tab.key"
+            @click="
             () => {
               activeCategory = tab.key as any
               if (activeCategory !== 'all') {
@@ -92,40 +85,17 @@ const currentTags = computed(() => {
       <button class="clear" type="button" @click="clearAll">전체 해제</button>
     </div>
 
-    <div v-if="activeCategory === 'all'" class="product-tabs" role="tablist">
+    <div v-if="activeCategory !== 'all'" class="chips-row">
       <button
-        v-for="pTab in productTabs"
-        :key="pTab.key"
-        type="button"
-        class="tab tab--product"
-        :class="{ 'tab--active': activeProductCategory === pTab.key }"
-        role="tab"
-        :aria-selected="activeProductCategory === pTab.key"
-        @click="
-          () => {
-            activeProductCategory = pTab.key as any
-            emit('update:productCategory', activeProductCategory)
-          }
-        "
-      >
-        {{ pTab.label }}
-      </button>
-    </div>
-
-    <div class="chips-row" :class="{ 'chips-row--empty': activeCategory === 'all' }">
-      <template v-if="activeCategory !== 'all'">
-        <button
           v-for="item in currentTags"
           :key="`${item.category}-${item.tag}`"
           type="button"
           :class="['chip', { 'chip--active': isSelected(item.category, item.tag) }]"
           @click="toggle(item.category, item.tag)"
-        >
-          {{ item.tag }}
-        </button>
-        <p v-if="currentTags.length === 0" class="empty">태그 없음</p>
-      </template>
-      <p v-else class="hint">카테고리를 선택하면 태그가 표시됩니다.</p>
+      >
+        {{ item.tag }}
+      </button>
+      <p v-if="currentTags.length === 0" class="empty">태그 없음</p>
     </div>
   </div>
 </template>
