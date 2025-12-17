@@ -1,20 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import type { LiveItem } from '../lib/live/types'
+import { getLiveStatus } from '../lib/live/utils'
 
 const props = defineProps<{
-  id?: string
-  title: string
-  description: string
-  thumbnailUrl: string
-  isLive: boolean
-  viewerCount: number
-  liveStartedAt: Date | string
+  item: LiveItem
   isActive?: boolean
 }>()
 
 const elapsed = computed(() => {
-  const started = new Date(props.liveStartedAt)
+  const started = new Date(props.item.startAt)
   const diffMs = Date.now() - started.getTime()
   const hours = Math.floor(diffMs / (1000 * 60 * 60))
   const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
@@ -28,35 +24,74 @@ const elapsed = computed(() => {
   return `${pad(minutes)}:${pad(seconds)}`
 })
 
+const status = computed(() => getLiveStatus(props.item, new Date()))
+const buttonLabel = computed(() => {
+  if (status.value === 'LIVE') {
+    return '입장하기'
+  }
+  if (status.value === 'ENDED') {
+    return 'VOD 다시보기'
+  }
+  return '예정'
+})
+
+const scheduledLabel = computed(() => {
+  const start = new Date(props.item.startAt)
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토']
+  const month = String(start.getMonth() + 1).padStart(2, '0')
+  const date = String(start.getDate()).padStart(2, '0')
+  const day = dayNames[start.getDay()]
+  const hours = String(start.getHours()).padStart(2, '0')
+  const minutes = String(start.getMinutes()).padStart(2, '0')
+
+  return `${month}.${date} (${day}) ${hours}:${minutes} 예정`
+})
+
 const router = useRouter()
 
 const handleWatchNow = () => {
-  if (props.id) {
-    router.push(`/live/${props.id}`)
+  if (status.value === 'LIVE') {
+    router.push({ name: 'live-detail', params: { id: props.item.id } })
     return
   }
-  alert('Live detail page is coming soon.')
+  if (status.value === 'ENDED') {
+    router.push({ name: 'vod', params: { id: props.item.id } })
+  }
 }
 </script>
 
 <template>
   <article class="card" :class="{ 'card--active': props.isActive }">
     <div class="media">
-      <img :src="props.thumbnailUrl" :alt="props.title" />
+      <img :src="props.item.thumbnailUrl" :alt="props.item.title" />
       <div class="top-badges">
-        <span v-if="props.isLive" class="badge badge-live">LIVE</span>
-        <span class="badge badge-viewers">시청자 {{ props.viewerCount.toLocaleString() }}명</span>
+        <span v-if="status === 'LIVE'" class="badge badge-live">LIVE</span>
+        <span
+          v-if="status === 'LIVE' && props.item.viewerCount != null"
+          class="badge badge-viewers"
+        >
+          시청자 {{ props.item.viewerCount.toLocaleString() }}명
+        </span>
       </div>
     </div>
     <div class="content">
       <div class="eyebrow-row">
-        <p class="eyebrow">현재 방송 중</p>
-        <span class="eyebrow-time">{{ elapsed }}</span>
+        <p v-if="status === 'LIVE'" class="eyebrow">현재 방송 중</p>
+        <span v-if="status === 'LIVE'" class="eyebrow-time">{{ elapsed }}</span>
+        <span v-else-if="status === 'UPCOMING'" class="eyebrow-time">{{ scheduledLabel }}</span>
       </div>
-      <h3>{{ props.title }}</h3>
-      <p class="desc">{{ props.description }}</p>
+      <h3>{{ props.item.title }}</h3>
+      <p class="desc">{{ props.item.description }}</p>
       <div class="meta-row">
-        <button type="button" class="cta" @click="handleWatchNow">보러가기</button>
+        <button
+          type="button"
+          class="cta"
+          :disabled="status === 'UPCOMING'"
+          :aria-disabled="status === 'UPCOMING'"
+          @click="handleWatchNow"
+        >
+          {{ buttonLabel }}
+        </button>
       </div>
     </div>
   </article>
@@ -215,6 +250,17 @@ h3 {
 .cta:hover {
   transform: translateY(-1px);
   box-shadow: 0 16px 32px rgba(119, 136, 115, 0.22);
+}
+
+.cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.cta:disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 @media (max-width: 1080px) {

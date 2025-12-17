@@ -1,10 +1,8 @@
 <script setup lang="ts">
+import { nextTick, ref } from 'vue'
 import { Swiper, SwiperSlide } from 'swiper/vue'
+import type { Swiper as SwiperClass } from 'swiper'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
-
-import 'swiper/css'
-import 'swiper/css/pagination'
-import 'swiper/css/navigation'
 
 import LiveCard from './LiveCard.vue'
 import type { LiveItem } from '../lib/home-data'
@@ -14,19 +12,45 @@ defineProps<{
 }>()
 
 const modules = [Autoplay, Pagination, Navigation]
+const prevEl = ref<HTMLButtonElement | null>(null)
+const nextEl = ref<HTMLButtonElement | null>(null)
+
+const handleSwiper = (swiper: SwiperClass) => {
+  nextTick(() => {
+    if (!prevEl.value || !nextEl.value) {
+      return
+    }
+
+    const rawNavigation = swiper.params.navigation
+    const navigation =
+      typeof rawNavigation === 'boolean' || !rawNavigation ? {} : rawNavigation
+    const navigationParams = navigation as {
+      prevEl?: Element | null
+      nextEl?: Element | null
+    }
+
+    navigationParams.prevEl = prevEl.value
+    navigationParams.nextEl = nextEl.value
+    swiper.params.navigation = navigationParams
+
+    swiper.navigation?.destroy()
+    swiper.navigation?.init()
+    swiper.navigation?.update()
+  })
+}
 </script>
 
 <template>
   <div class="live-carousel">
     <!-- 커스텀 네비 버튼 (기본 화살표는 숨김) -->
-    <button class="nav-btn live-prev" aria-label="이전">
+    <button ref="prevEl" class="nav-btn live-prev" aria-label="이전">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
               stroke-linejoin="round" />
       </svg>
     </button>
 
-    <button class="nav-btn live-next" aria-label="다음">
+    <button ref="nextEl" class="nav-btn live-next" aria-label="다음">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
               stroke-linejoin="round" />
@@ -42,19 +66,17 @@ const modules = [Autoplay, Pagination, Navigation]
         :space-between="28"
         :loop="items.length > 1"
         :speed="880"
+        :navigation="true"
         :autoplay="{
           delay: 3000,
           disableOnInteraction: false,
           pauseOnMouseEnter: true,
         }"
         :pagination="{ clickable: true }"
-        :navigation="{
-          nextEl: '.live-next',
-          prevEl: '.live-prev',
-        }"
+        @swiper="handleSwiper"
     >
       <SwiperSlide v-for="item in items" :key="item.id" class="live-slide">
-        <LiveCard v-bind="item" />
+        <LiveCard :item="item" />
       </SwiperSlide>
     </Swiper>
   </div>

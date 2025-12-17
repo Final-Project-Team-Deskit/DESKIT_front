@@ -1,16 +1,11 @@
+import { liveItems as allLiveItems } from './live/data'
+import { getLiveStatus } from './live/utils'
+import type { LiveItem } from './live/types'
 import type { ProductTags } from './products-data'
 import { productsData } from './products-data'
 import { setupsData } from './setups-data'
 
-export type LiveItem = {
-  id: string
-  title: string
-  description: string
-  thumbnailUrl: string
-  isLive: boolean
-  viewerCount: number
-  liveStartedAt: Date
-}
+export type { LiveItem }
 
 export type SetupItem = {
   id: string
@@ -29,44 +24,43 @@ export type ProductItem = {
   isSoldOut?: boolean
 }
 
-export const liveItems: LiveItem[] = [
-  {
-    id: '1',
-    title: '프리미엄 데스크 셋업 라이브',
-    description: '인기 유튜버와 함께하는 특별한 데스크 셋업 쇼핑',
-    thumbnailUrl: '/modern-desk-setup-live-stream.jpg',
-    isLive: true,
-    viewerCount: 1284,
-    liveStartedAt: new Date(Date.now() - 1 * 60 * 60 * 1000 - 23 * 60 * 1000 - 45 * 1000),
-  },
-  {
-    id: '2',
-    title: '게이밍 셋업 특가 쇼핑',
-    description: '최고 성능의 게이밍 장비를 특별 가격으로',
-    thumbnailUrl: '/gaming-rgb-desk-setup.jpg',
-    isLive: true,
-    viewerCount: 892,
-    liveStartedAt: new Date(Date.now() - 45 * 60 * 1000),
-  },
-  {
-    id: '3',
-    title: '미니멀 오피스 꾸미기',
-    description: '심플하고 세련된 업무 공간 만들기',
-    thumbnailUrl: '/minimal-white-desk-setup.jpg',
-    isLive: true,
-    viewerCount: 2156,
-    liveStartedAt: new Date(Date.now() - 2 * 60 * 60 * 1000 - 15 * 60 * 1000),
-  },
-  {
-    id: '4',
-    title: '우드 인테리어 데스크',
-    description: '따뜻한 원목 소재로 꾸미는 자연스러운 공간',
-    thumbnailUrl: '/wooden-natural-desk-setup.jpg',
-    isLive: true,
-    viewerCount: 1547,
-    liveStartedAt: new Date(Date.now() - 30 * 60 * 1000),
-  },
-]
+const now = new Date()
+const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+const windowEnd = new Date(
+  todayStart.getFullYear(),
+  todayStart.getMonth(),
+  todayStart.getDate() + 6,
+  23,
+  59,
+  59,
+  999,
+)
+
+export { allLiveItems }
+
+export const liveItems: LiveItem[] = allLiveItems
+  .filter((item) => {
+    const status = getLiveStatus(item, now)
+    if (status === 'LIVE') {
+      return true
+    }
+    if (status === 'UPCOMING') {
+      const startAt = new Date(item.startAt).getTime()
+      return startAt >= todayStart.getTime() && startAt <= windowEnd.getTime()
+    }
+    return false
+  })
+  .sort((a, b) => {
+    const statusA = getLiveStatus(a, now)
+    const statusB = getLiveStatus(b, now)
+
+    if (statusA !== statusB) {
+      return statusA === 'LIVE' ? -1 : 1
+    }
+
+    return new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
+  })
+  .slice(0, 8)
 
 export const popularSetups: SetupItem[] = setupsData.slice(0, 6).map((setup) => ({
   id: String(setup.setup_id),
