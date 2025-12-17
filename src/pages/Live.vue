@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import PageContainer from '../components/PageContainer.vue'
+import PageHeader from '../components/PageHeader.vue'
 import { liveItems } from '../lib/live/data'
 import {
   filterLivesByDay,
@@ -9,10 +11,12 @@ import {
   sortLivesByStartAt,
 } from '../lib/live/utils'
 import type { LiveItem } from '../lib/live/types'
+import { useNow } from '../lib/live/useNow'
 
 const route = useRoute()
 const router = useRouter()
 const today = new Date()
+const { now } = useNow(1000)
 
 const liveId = computed(() => {
   const id = route.params.id
@@ -37,8 +41,7 @@ const detailStatus = computed(() => {
   if (!liveDetail.value) {
     return undefined
   }
-  const now = new Date()
-  return getLiveStatus(liveDetail.value, now)
+  return getLiveStatus(liveDetail.value, now.value)
 })
 
 const isToday = (day: Date) => {
@@ -73,8 +76,7 @@ const formatTime = (value: string) => {
 }
 
 const getStatus = (item: LiveItem) => {
-  const now = new Date()
-  return getLiveStatus(item, now)
+  return getLiveStatus(item, now.value)
 }
 
 const selectDay = (day: Date) => {
@@ -107,89 +109,87 @@ const handleDetailAction = () => {
 </script>
 
 <template>
-  <main class="page">
-    <div class="page__inner">
-      <template v-if="liveId">
-        <h2 class="section-title">라이브 상세</h2>
-        <div v-if="liveDetail" class="live-detail">
-          <img
-            class="live-detail__thumb"
-            :src="liveDetail.thumbnailUrl"
-            :alt="liveDetail.title"
-          />
-          <div class="live-detail__body">
-            <h3 class="live-detail__title">{{ liveDetail.title }}</h3>
-            <p class="live-detail__desc">{{ liveDetail.description }}</p>
-            <p class="live-detail__status">상태: {{ detailStatus }}</p>
-            <button
-              v-if="detailStatus === 'LIVE'"
-              type="button"
-              class="live-detail__cta"
-              @click="handleDetailAction"
-            >
-              입장하기
-            </button>
-            <button
-              v-else-if="detailStatus === 'ENDED'"
-              type="button"
-              class="live-detail__cta"
-              @click="handleDetailAction"
-            >
-              VOD 다시보기
-            </button>
-            <span v-else class="live-detail__upcoming">예정</span>
-          </div>
-        </div>
-        <p v-else class="empty-state">해당 라이브를 찾을 수 없습니다.</p>
-      </template>
+  <PageContainer>
+    <PageHeader :title="liveId ? '라이브 상세' : '라이브 일정'" eyebrow="DESKIT LIVE" />
 
-      <template v-else>
-        <h2 class="section-title">라이브 일정</h2>
-        <div class="date-strip">
+    <template v-if="liveId">
+      <div v-if="liveDetail" class="live-detail">
+        <img
+          class="live-detail__thumb"
+          :src="liveDetail.thumbnailUrl"
+          :alt="liveDetail.title"
+        />
+        <div class="live-detail__body">
+          <h3 class="live-detail__title">{{ liveDetail.title }}</h3>
+          <p class="live-detail__desc">{{ liveDetail.description }}</p>
+          <p class="live-detail__status">상태: {{ detailStatus }}</p>
           <button
-            v-for="day in dayWindow"
-            :key="day.toISOString()"
+            v-if="detailStatus === 'LIVE'"
             type="button"
-            class="date-pill"
-            :class="{ 'date-pill--active': isSelectedDay(day) }"
-            @click="selectDay(day)"
+            class="live-detail__cta"
+            @click="handleDetailAction"
           >
-            <span class="date-pill__label">{{ formatDayLabel(day).label }}</span>
-            <span class="date-pill__date">{{ formatDayLabel(day).date }}</span>
+            입장하기
           </button>
+          <button
+            v-else-if="detailStatus === 'ENDED'"
+            type="button"
+            class="live-detail__cta"
+            @click="handleDetailAction"
+          >
+            VOD 다시보기
+          </button>
+          <span v-else class="live-detail__upcoming">예정</span>
         </div>
+      </div>
+      <p v-else class="empty-state">해당 라이브를 찾을 수 없습니다.</p>
+    </template>
 
-        <div class="live-list">
-          <div v-if="!selectedLives.length" class="empty-state">
-            선택한 날짜에 예정된 라이브가 없습니다.
-          </div>
-          <div v-else class="live-list__items">
-            <article v-for="item in selectedLives" :key="item.id" class="live-row">
-              <div class="live-row__time">{{ formatTime(item.startAt) }}</div>
-              <div class="live-row__card">
-                <img class="live-row__thumb" :src="item.thumbnailUrl" :alt="item.title" />
-                <div class="live-row__meta">
-                  <h3 class="live-row__title">{{ item.title }}</h3>
-                  <p v-if="item.sellerName" class="live-row__seller">{{ item.sellerName }}</p>
-                </div>
-                <button
-                  type="button"
-                  class="live-row__cta"
-                  :disabled="getStatus(item) === 'UPCOMING'"
-                  :aria-disabled="getStatus(item) === 'UPCOMING'"
-                  @click="handleAction(item)"
-                >
-                  <span v-if="getStatus(item) === 'LIVE'">입장하기</span>
-                  <span v-else-if="getStatus(item) === 'ENDED'">VOD 다시보기</span>
-                  <span v-else>예정</span>
-                </button>
-              </div>
-            </article>
-          </div>
+    <template v-else>
+      <div class="date-strip">
+        <button
+          v-for="day in dayWindow"
+          :key="day.toISOString()"
+          type="button"
+          class="date-pill"
+          :class="{ 'date-pill--active': isSelectedDay(day) }"
+          @click="selectDay(day)"
+        >
+          <span class="date-pill__label">{{ formatDayLabel(day).label }}</span>
+          <span class="date-pill__date">{{ formatDayLabel(day).date }}</span>
+        </button>
+      </div>
+
+      <div class="live-list">
+        <div v-if="!selectedLives.length" class="empty-state">
+          선택한 날짜에 예정된 라이브가 없습니다.
         </div>
-      </template>
-    </div>
-  </main>
+        <div v-else class="live-list__items">
+          <article v-for="item in selectedLives" :key="item.id" class="live-row">
+            <div class="live-row__time">{{ formatTime(item.startAt) }}</div>
+            <div class="live-row__card">
+              <img class="live-row__thumb" :src="item.thumbnailUrl" :alt="item.title" />
+              <div class="live-row__meta">
+                <h3 class="live-row__title">{{ item.title }}</h3>
+                <p v-if="item.sellerName" class="live-row__seller">{{ item.sellerName }}</p>
+              </div>
+              <button
+                type="button"
+                class="live-row__cta"
+                :disabled="getStatus(item) === 'UPCOMING'"
+                :aria-disabled="getStatus(item) === 'UPCOMING'"
+                @click="handleAction(item)"
+              >
+                <span v-if="getStatus(item) === 'LIVE'">입장하기</span>
+                <span v-else-if="getStatus(item) === 'ENDED'">VOD 다시보기</span>
+                <span v-else>예정</span>
+              </button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </template>
+  </PageContainer>
 </template>
 
 <style scoped>

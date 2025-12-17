@@ -34,7 +34,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/live/:id',
     name: 'live-detail',
-    component: () => import('../pages/Live.vue'),
+    component: () => import('../pages/LiveDetail.vue'),
   },
   {
     path: '/vod/:id',

@@ -3,15 +3,17 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { LiveItem } from '../lib/live/types'
 import { getLiveStatus } from '../lib/live/utils'
+import { useNow } from '../lib/live/useNow'
 
 const props = defineProps<{
   item: LiveItem
   isActive?: boolean
 }>()
 
+const { now } = useNow(1000)
 const elapsed = computed(() => {
   const started = new Date(props.item.startAt)
-  const diffMs = Date.now() - started.getTime()
+  const diffMs = now.value.getTime() - started.getTime()
   const hours = Math.floor(diffMs / (1000 * 60 * 60))
   const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
   const seconds = Math.floor((diffMs % (1000 * 60)) / 1000)
@@ -23,8 +25,7 @@ const elapsed = computed(() => {
   }
   return `${pad(minutes)}:${pad(seconds)}`
 })
-
-const status = computed(() => getLiveStatus(props.item, new Date()))
+const status = computed(() => getLiveStatus(props.item, now.value))
 const buttonLabel = computed(() => {
   if (status.value === 'LIVE') {
     return '입장하기'
