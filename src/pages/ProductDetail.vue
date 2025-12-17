@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { productsData, flattenTags } from '../lib/products-data'
+import PageContainer from '../components/PageContainer.vue'
 
 const route = useRoute()
 const productId = computed(() => (Array.isArray(route.params.id) ? route.params.id[0] : route.params.id))
@@ -80,76 +81,75 @@ const handleBuyNow = () => {
 </script>
 
 <template>
-  <main class="page">
-    <div class="page__inner detail">
-      <RouterLink to="/products" class="back">← 상품 목록으로</RouterLink>
+  <PageContainer :max-width="1200">
+    <RouterLink to="/products" class="back">← 상품 목록으로</RouterLink>
 
-      <div v-if="product" class="card">
-        <div class="media">
-          <div class="thumbs" v-if="imageList.length">
-            <button
-              v-for="(img, idx) in imageList"
-              :key="img + idx"
-              type="button"
-              class="thumb-btn"
-              :class="{ active: idx === selectedImageIndex }"
-              @click="selectedImageIndex = idx"
-            >
-              <img :src="img" :alt="`${product.name} 썸네일 ${idx + 1}`" />
-            </button>
-          </div>
-          <div class="main-image">
-            <img :src="selectedImage" :alt="product.name" />
+    <div v-if="product" class="card">
+      <div class="media">
+        <div class="thumbs" v-if="imageList.length">
+          <button
+            v-for="(img, idx) in imageList"
+            :key="img + idx"
+            type="button"
+            class="thumb-btn"
+            :class="{ active: idx === selectedImageIndex }"
+            @click="selectedImageIndex = idx"
+          >
+            <img :src="img" :alt="`${product.name} 썸네일 ${idx + 1}`" />
+          </button>
+        </div>
+        <div class="main-image">
+          <img :src="selectedImage" :alt="product.name" />
+        </div>
+      </div>
+      <div class="info">
+        <div class="content">
+          <p class="eyebrow">DESKIT PRODUCT</p>
+          <p v-if="product.seller" class="seller">{{ product.seller }}</p>
+          <h1>{{ product.name }}</h1>
+          <p class="desc" v-if="product.description">{{ product.description }}</p>
+          <div v-if="flatTags.length" class="tags flat">
+            <span v-for="tag in flatTags" :key="tag" class="tag">#{{ tag }}</span>
           </div>
         </div>
-        <div class="info">
-          <div class="content">
-            <p class="eyebrow">DESKIT PRODUCT</p>
-            <p v-if="product.seller" class="seller">{{ product.seller }}</p>
-            <h1>{{ product.name }}</h1>
-            <p class="desc" v-if="product.description">{{ product.description }}</p>
-            <div v-if="flatTags.length" class="tags flat">
-              <span v-for="tag in flatTags" :key="tag" class="tag">#{{ tag }}</span>
+        <div class="spacer" />
+        <div class="purchase">
+          <div class="price-box">
+            <span v-if="discountRate > 0" class="badge">-{{ discountRate }}%</span>
+            <div class="prices">
+              <p v-if="originalPrice" class="original">{{ originalPrice.toLocaleString('ko-KR') }}원</p>
+              <p class="final">{{ product.price.toLocaleString('ko-KR') }}원</p>
             </div>
           </div>
-          <div class="spacer" />
-          <div class="purchase">
-            <div class="price-box">
-              <span v-if="discountRate > 0" class="badge">-{{ discountRate }}%</span>
-              <div class="prices">
-                <p v-if="originalPrice" class="original">{{ originalPrice.toLocaleString('ko-KR') }}원</p>
-                <p class="final">{{ product.price.toLocaleString('ko-KR') }}원</p>
-              </div>
+          <div class="qty">
+            <span class="label">수량</span>
+            <div class="stepper">
+              <button type="button" @click="decrease" :disabled="quantity === 1">-</button>
+              <span class="count">{{ quantity }}</span>
+              <button type="button" @click="increase">+</button>
             </div>
-            <div class="qty">
-              <span class="label">수량</span>
-              <div class="stepper">
-                <button type="button" @click="decrease" :disabled="quantity === 1">-</button>
-                <span class="count">{{ quantity }}</span>
-                <button type="button" @click="increase">+</button>
-              </div>
-            </div>
-            <div class="actions">
-              <button type="button" class="btn secondary" @click="handleAddToCart">장바구니 담기</button>
-              <button type="button" class="btn primary" @click="handleBuyNow">구매하기</button>
-            </div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn secondary" @click="handleAddToCart">장바구니 담기</button>
+            <button type="button" class="btn primary" @click="handleBuyNow">구매하기</button>
           </div>
         </div>
       </div>
+    </div>
 
-      <div v-else class="empty">
-        <p>상품을 찾을 수 없습니다.</p>
-        <RouterLink to="/products" class="back-link">상품 목록으로 돌아가기</RouterLink>
+    <div v-else class="empty">
+      <p>상품을 찾을 수 없습니다.</p>
+      <RouterLink to="/products" class="back-link">상품 목록으로 돌아가기</RouterLink>
+    </div>
+
+    <section v-if="product?.detailHtml" class="detail-html">
+      <div class="page__inner">
+        <h2 class="detail-html__title">상세 설명</h2>
+        <!-- NOTE: Ensure HTML is sanitized before rendering in production -->
+        <div class="detail-html__content" v-html="product.detailHtml" />
       </div>
-    </div>
-  </main>
-  <section v-if="product?.detailHtml" class="detail-html">
-    <div class="page__inner">
-      <h2 class="detail-html__title">상세 설명</h2>
-      <!-- NOTE: Ensure HTML is sanitized before rendering in production -->
-      <div class="detail-html__content" v-html="product.detailHtml" />
-    </div>
-  </section>
+    </section>
+  </PageContainer>
 </template>
 
 <style scoped>
@@ -172,7 +172,7 @@ const handleBuyNow = () => {
   border: 1px solid var(--border-color);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-card);
 }
 
 .media {
@@ -215,18 +215,18 @@ const handleBuyNow = () => {
   padding: 0;
   background: #fff;
   cursor: pointer;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 6px 14px rgba(var(--primary-rgb), 0.1);
   transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .thumb-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+  box-shadow: 0 8px 18px rgba(var(--primary-rgb), 0.14);
 }
 
 .thumb-btn.active {
   border-color: var(--primary-color);
-  box-shadow: 0 10px 22px rgba(255, 127, 80, 0.18);
+  box-shadow: 0 10px 22px rgba(var(--primary-rgb), 0.18);
 }
 
 .thumb-btn img {
@@ -311,7 +311,7 @@ h1 {
   width: min(520px, 100%);
   align-self: flex-start;
   box-sizing: border-box;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-card);
 }
 
 .price-box {
@@ -328,13 +328,13 @@ h1 {
 
 .badge {
   align-self: flex-start;
-  background: var(--primary-color);
+  background: var(--discount-color);
   color: #fff;
   padding: 6px 10px;
   border-radius: 12px;
   font-weight: 800;
   font-size: 0.9rem;
-  box-shadow: 0 10px 18px rgba(255, 127, 80, 0.25);
+  box-shadow: 0 10px 18px var(--discount-color-soft);
 }
 
 .original {
@@ -409,7 +409,7 @@ h1 {
 
 .btn.secondary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 16px rgba(var(--primary-rgb), 0.12);
 }
 
 .btn.primary {
@@ -420,7 +420,7 @@ h1 {
 
 .btn.primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(255, 127, 80, 0.25);
+  box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.2);
 }
 
 .empty {
@@ -441,7 +441,7 @@ h1 {
 
 .detail-html {
   padding: 28px 0 38px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .detail-html__title {

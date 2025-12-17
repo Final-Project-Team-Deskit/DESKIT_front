@@ -68,7 +68,7 @@ const handleWatchNow = () => {
   border-radius: 20px;
   overflow: hidden;
   border: 1px solid var(--border-color);
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 18px 40px rgba(119, 136, 115, 0.12);
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease;
   display: grid;
   grid-template-columns: minmax(300px, 360px) 1fr;
@@ -77,13 +77,13 @@ const handleWatchNow = () => {
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 20px 44px rgba(15, 23, 42, 0.14);
-  border-color: rgba(255, 127, 80, 0.4);
+  box-shadow: 0 20px 44px rgba(119, 136, 115, 0.16);
+  border-color: var(--accent-color);
 }
 
 .card--active {
-  border-color: rgba(255, 127, 80, 0.5);
-  box-shadow: 0 22px 48px rgba(255, 127, 80, 0.18);
+  border-color: var(--primary-color);
+  box-shadow: 0 22px 48px rgba(119, 136, 115, 0.2);
 }
 
 .media {
@@ -110,11 +110,11 @@ const handleWatchNow = () => {
   font-weight: 800;
   font-size: 0.85rem;
   color: #fff;
-  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 12px 22px rgba(119, 136, 115, 0.18);
 }
 
 .badge-live {
-  background: #ff4d4f;
+  background: var(--live-color);
 }
 
 .top-badges {
@@ -131,7 +131,7 @@ const handleWatchNow = () => {
 }
 
 .badge-viewers {
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(47, 58, 47, 0.72);
   color: #fff;
   backdrop-filter: blur(6px);
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -208,13 +208,13 @@ h3 {
   border-radius: 14px;
   font-size: 1.05rem;
   cursor: pointer;
-  box-shadow: 0 14px 30px rgba(255, 127, 80, 0.22);
+  box-shadow: 0 14px 30px rgba(119, 136, 115, 0.18);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 16px 32px rgba(255, 127, 80, 0.26);
+  box-shadow: 0 16px 32px rgba(119, 136, 115, 0.22);
 }
 
 @media (max-width: 1080px) {

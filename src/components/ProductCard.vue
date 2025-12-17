@@ -50,7 +50,7 @@ const discountRate = computed(() => {
   border: 1px solid var(--border-color);
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-card);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -62,7 +62,7 @@ const discountRate = computed(() => {
 
 .card-link:hover .card {
   transform: translateY(-3px);
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.1);
+  box-shadow: 0 16px 32px rgba(var(--primary-rgb), 0.14);
 }
 
 .thumb {
@@ -84,13 +84,13 @@ const discountRate = computed(() => {
   position: absolute;
   top: 10px;
   left: 10px;
-  background: var(--primary-color);
+  background: var(--discount-color);
   color: #fff;
   padding: 6px 10px;
   border-radius: 12px;
   font-weight: 700;
   font-size: 0.85rem;
-  box-shadow: 0 10px 18px rgba(255, 127, 80, 0.3);
+  box-shadow: 0 2px 6px rgba(249, 115, 22, 0.25);
 }
 
 .body {
@@ -122,7 +122,7 @@ h3 {
 
 .price {
   margin: 0;
-  color: #0ea5e9;
+  color: var(--primary-color);
   font-weight: 800;
   font-size: 1.05rem;
   white-space: nowrap;

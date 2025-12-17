@@ -314,12 +314,12 @@ const submitSearch = () => {
 
 .nav-link:hover {
   color: var(--text-strong);
-  background: rgba(255, 127, 80, 0.05);
+  background: var(--hover-bg);
 }
 
 .nav-link--active {
   color: var(--primary-color);
-  background: rgba(255, 127, 80, 0.12);
+  background: var(--hover-bg);
 }
 
 .nav-link::after {
@@ -359,14 +359,14 @@ const submitSearch = () => {
   font-weight: 800;
   letter-spacing: 0.04em;
   color: #fff;
-  background: linear-gradient(135deg, #ef4444, #f59e0b);
-  box-shadow: 0 6px 14px rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, var(--live-color), var(--live-color));
+  box-shadow: 0 6px 14px rgba(229, 72, 77, 0.2);
 }
 
 .nav-link--live-active {
   color: var(--primary-color);
-  background: rgba(255, 127, 80, 0.14);
-  box-shadow: 0 10px 24px rgba(255, 127, 80, 0.14);
+  background: var(--hover-bg);
+  box-shadow: 0 10px 24px rgba(119, 136, 115, 0.14);
 }
 
 .right {
@@ -401,8 +401,8 @@ const submitSearch = () => {
 
 .search__input:focus {
   outline: none;
-  border-color: rgba(255, 127, 80, 0.6);
-  box-shadow: 0 10px 24px rgba(255, 127, 80, 0.12);
+  border-color: var(--primary-color);
+  box-shadow: 0 10px 24px rgba(119, 136, 115, 0.14);
 }
 
 .search__icon {
@@ -452,7 +452,7 @@ const submitSearch = () => {
 .icon-btn:hover {
   color: var(--text-strong);
   background: var(--surface-weak);
-  border-color: rgba(255, 127, 80, 0.5);
+  border-color: var(--primary-color);
   transform: translateY(-1px);
 }
 
@@ -476,7 +476,7 @@ const submitSearch = () => {
   background: #fff;
   border-bottom-left-radius: 12px;
   border-bottom-right-radius: 12px;
-  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.14);
+  box-shadow: 0 18px 48px rgba(119, 136, 115, 0.16);
   z-index: 11;
   padding: 12px 16px 16px;
   max-height: calc(100vh - var(--header-height, 64px));

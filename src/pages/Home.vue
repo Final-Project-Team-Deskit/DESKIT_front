@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { liveItems, popularProducts, popularSetups } from '../lib/home-data'
-import LiveCarousel from '../components/LiveCarousel.vue'
-import SetupCarousel from '../components/SetupCarousel.vue'
-import ProductCarousel from '../components/ProductCarousel.vue'
+import { liveItems, popularProducts, popularSetups } from '../lib/home-data';
+import LiveCarousel from '../components/LiveCarousel.vue';
+import SetupCarousel from '../components/SetupCarousel.vue';
+import ProductCarousel from '../components/ProductCarousel.vue';
 </script>
 
 <template>
@@ -54,29 +54,68 @@ import ProductCarousel from '../components/ProductCarousel.vue'
 
 .hero {
   position: relative;
-  padding: 46px 20px 14px;
+  padding: 72px 20px 28px;
+  background: radial-gradient(
+      circle at 16% 12%,
+      rgba(210, 220, 182, 0.14),
+      transparent 36%
+    ),
+    radial-gradient(
+      circle at 84% 10%,
+      rgba(161, 188, 152, 0.12),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(247, 248, 243, 0.85) 0%,
+      #ffffff 62%,
+      rgba(247, 248, 243, 0.9) 100%
+    );
 }
 
-.hero__content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px 18px 0;
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: rgba(15, 23, 42, 0.06);
+  pointer-events: none;
 }
 
 .hero__glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 20% 20%, rgba(255, 127, 80, 0.18), transparent 36%),
-    radial-gradient(circle at 80% 10%, rgba(14, 165, 233, 0.16), transparent 35%);
-  opacity: 0.7;
+  background: radial-gradient(
+      circle at 22% 14%,
+      rgba(210, 220, 182, 0.12),
+      transparent 42%
+    ),
+    radial-gradient(
+      circle at 78% 12%,
+      rgba(161, 188, 152, 0.1),
+      transparent 38%
+    );
+  opacity: 0.45;
   pointer-events: none;
 }
 
+.hero__content {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 22px 22px;
+  z-index: 1;
+}
+
 .eyebrow {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   color: var(--text-soft);
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
+  font-size: 0.9rem;
+  text-transform: uppercase;
 }
 
 h1 {
@@ -84,12 +123,20 @@ h1 {
   font-size: 2rem;
   font-weight: 800;
   letter-spacing: -0.6px;
+  color: var(--text-strong);
 }
 
 .lede {
   margin: 8px 0 0;
   color: var(--text-muted);
   font-size: 1.05rem;
+}
+
+.hero-cta {
+  margin: 10px 0 0;
+  color: var(--live-color);
+  font-weight: 800;
+  font-size: 0.98rem;
 }
 
 .stack {
@@ -126,6 +173,14 @@ h1 {
 }
 
 @media (max-width: 640px) {
+  .hero {
+    padding: 52px 16px 20px;
+  }
+
+  .hero__content {
+    padding: 20px 16px 16px;
+  }
+
   .page__inner {
     padding-left: 16px;
     padding-right: 16px;

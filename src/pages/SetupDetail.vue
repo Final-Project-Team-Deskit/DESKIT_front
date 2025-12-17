@@ -5,6 +5,7 @@ import { setupsData } from '../lib/setups-data'
 import { productsData } from '../lib/products-data'
 import { mapProducts, type UiProduct } from '../lib/products-mapper'
 import ProductCard from '../components/ProductCard.vue'
+import PageContainer from '../components/PageContainer.vue'
 
 const route = useRoute()
 const setupId = computed(() => Number(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id))
@@ -23,70 +24,68 @@ const setupProducts = computed<UiProduct[]>(() => {
 </script>
 
 <template>
-  <main class="page setup-detail">
-    <div class="page__inner">
-      <RouterLink to="/setup" class="back">← 셋업 목록</RouterLink>
+  <PageContainer :max-width="1240">
+    <RouterLink to="/setup" class="back">← 셋업 목록</RouterLink>
 
-      <div v-if="setup" class="layout">
-        <div class="hero-media">
-          <img :src="setup.imageUrl" :alt="setup.title" />
-        </div>
-
-        <section class="info">
-          <p class="eyebrow">DESKIT SETUP</p>
-          <h1>{{ setup.title }}</h1>
-          <p class="desc">{{ setup.short_desc }}</p>
-          <div v-if="setup.tags && setup.tags.length" class="tags">
-            <span v-for="tag in setup.tags" :key="tag" class="tag">#{{ tag }}</span>
-          </div>
-        </section>
-
-        <section class="tip" v-if="setup.tip">
-          <h2 class="section-title">Tip</h2>
-          <div class="tip-card">
-            <p class="tip-text">{{ setup.tip }}</p>
-          </div>
-        </section>
-        <section class="tip" v-else>
-          <h2 class="section-title">Tip</h2>
-          <div class="tip-card">
-            <p class="tip-text">Tip coming soon</p>
-          </div>
-        </section>
-
-        <section class="products-block">
-          <div class="products-head">
-            <h2>셋업에 사용된 상품</h2>
-            <span class="count">({{ setupProducts.length }}개)</span>
-          </div>
-          <div v-if="setupProducts.length" class="product-grid">
-            <ProductCard
-              v-for="product in setupProducts"
-              :key="product.id"
-              :id="product.id"
-              :name="product.name"
-              :image-url="product.imageUrl"
-              :price="product.price"
-              :original-price="product.originalPrice"
-            />
-          </div>
-          <div v-else class="products-empty">연결된 상품이 아직 없어요.</div>
-        </section>
-
-        <div class="bottom-cta">
-          <RouterLink to="/products" class="btn-link">전체 상품 보기</RouterLink>
-        </div>
+    <div v-if="setup" class="layout">
+      <div class="hero-media">
+        <img :src="setup.imageUrl" :alt="setup.title" />
       </div>
 
-      <div v-else class="empty">
-        <p>셋업을 찾을 수 없습니다.</p>
-        <div class="links">
-          <RouterLink to="/" class="link">홈으로</RouterLink>
-          <RouterLink to="/setup" class="link">셋업 목록으로</RouterLink>
+      <section class="info">
+        <p class="eyebrow">DESKIT SETUP</p>
+        <h1>{{ setup.title }}</h1>
+        <p class="desc">{{ setup.short_desc }}</p>
+        <div v-if="setup.tags && setup.tags.length" class="tags">
+          <span v-for="tag in setup.tags" :key="tag" class="tag">#{{ tag }}</span>
         </div>
+      </section>
+
+      <section class="tip" v-if="setup.tip">
+        <h2 class="section-title">Tip</h2>
+        <div class="tip-card">
+          <p class="tip-text">{{ setup.tip }}</p>
+        </div>
+      </section>
+      <section class="tip" v-else>
+        <h2 class="section-title">Tip</h2>
+        <div class="tip-card">
+          <p class="tip-text">Tip coming soon</p>
+        </div>
+      </section>
+
+      <section class="products-block">
+        <div class="products-head">
+          <h2>셋업에 사용된 상품</h2>
+          <span class="count">({{ setupProducts.length }}개)</span>
+        </div>
+        <div v-if="setupProducts.length" class="product-grid">
+          <ProductCard
+            v-for="product in setupProducts"
+            :key="product.id"
+            :id="product.id"
+            :name="product.name"
+            :image-url="product.imageUrl"
+            :price="product.price"
+            :original-price="product.originalPrice"
+          />
+        </div>
+        <div v-else class="products-empty">연결된 상품이 아직 없어요.</div>
+      </section>
+
+      <div class="bottom-cta">
+        <RouterLink to="/products" class="btn-link">전체 상품 보기</RouterLink>
       </div>
     </div>
-  </main>
+
+    <div v-else class="empty">
+      <p>셋업을 찾을 수 없습니다.</p>
+      <div class="links">
+        <RouterLink to="/" class="link">홈으로</RouterLink>
+        <RouterLink to="/setup" class="link">셋업 목록으로</RouterLink>
+      </div>
+    </div>
+  </PageContainer>
 </template>
 
 <style scoped>
@@ -188,8 +187,8 @@ h1 {
   padding: 18px 20px;
   border: 1px solid var(--border-color);
   border-radius: 14px;
-  background: #f8fafc;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  background: var(--surface-weak);
+  box-shadow: var(--shadow-soft);
 }
 
 .tip-text {
@@ -204,7 +203,7 @@ h1 {
   border: 1px solid var(--border-color);
   border-radius: 14px;
   background: var(--surface);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-soft);
 }
 
 .products-head {

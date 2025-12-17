@@ -45,7 +45,7 @@ const change = (value: SortOption) => emit('update:modelValue', value)
 }
 
 .tab {
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
   padding: 10px 12px;
   border-radius: 10px;
@@ -57,13 +57,13 @@ const change = (value: SortOption) => emit('update:modelValue', value)
 
 .tab:hover {
   color: var(--text-strong);
-  background: rgba(255, 127, 80, 0.06);
+  background: var(--hover-bg);
 }
 
 .tab--active {
-  background: #fff;
-  color: var(--text-strong);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
-  border: 1px solid rgba(255, 127, 80, 0.4);
+  background: var(--surface);
+  color: var(--primary-color);
+  box-shadow: 0 10px 24px rgba(var(--primary-rgb), 0.12);
+  border: 1px solid var(--primary-color);
 }
 </style>

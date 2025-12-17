@@ -1,48 +1,52 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
-import SortTabs, { type SortOption } from '../components/SortTabs.vue'
-import TagChipsFilter from '../components/TagChipsFilter.vue'
-import ProductListCard from '../components/ProductListCard.vue'
-import { productsData } from '../lib/products-data'
-import { mapProducts } from '../lib/products-mapper'
+import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
+import SortTabs, { type SortOption } from '../components/SortTabs.vue';
+import TagChipsFilter from '../components/TagChipsFilter.vue';
+import ProductListCard from '../components/ProductListCard.vue';
+import PageContainer from '../components/PageContainer.vue';
+import PageHeader from '../components/PageHeader.vue';
+import { productsData } from '../lib/products-data';
+import { mapProducts } from '../lib/products-mapper';
 
-const route = useRoute()
+const route = useRoute();
 
-const sortBy = ref<SortOption>('ranking')
-const productCategory = ref<'all' | 'furniture' | 'computer' | 'accessory'>('all')
-const tagKeys = ['space', 'tone', 'situation', 'mood'] as const
-type TagKey = (typeof tagKeys)[number]
-type TagSelection = Record<TagKey, string[]>
+const sortBy = ref<SortOption>('ranking');
+const productCategory = ref<'all' | 'furniture' | 'computer' | 'accessory'>(
+  'all'
+);
+const tagKeys = ['space', 'tone', 'situation', 'mood'] as const;
+type TagKey = (typeof tagKeys)[number];
+type TagSelection = Record<TagKey, string[]>;
 
 const emptySelection: TagSelection = {
   space: [],
   tone: [],
   situation: [],
   mood: [],
-}
+};
 
-const selectedTags = ref<TagSelection>({ ...emptySelection })
+const selectedTags = ref<TagSelection>({ ...emptySelection });
 
 const categoryMap: Record<string, string> = {
   furniture: '가구',
   computer: '전자기기',
   accessory: '악세서리',
-  '전자기기': '전자기기',
-  '가구': '가구',
-  '악세서리': '악세서리',
-}
+  전자기기: '전자기기',
+  가구: '가구',
+  악세서리: '악세서리',
+};
 
 const categoryLabel = computed(() => {
-  const raw = route.query.category
-  if (!raw) return undefined
-  const value = Array.isArray(raw) ? raw[0] : raw
-  if (!value) return undefined
-  const key = value.toString().toLowerCase()
-  return categoryMap[key] ?? value.toString()
-})
+  const raw = route.query.category;
+  if (!raw) return undefined;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (!value) return undefined;
+  const key = value.toString().toLowerCase();
+  return categoryMap[key] ?? value.toString();
+});
 
-const baseProducts = computed(() => mapProducts(productsData))
+const baseProducts = computed(() => mapProducts(productsData));
 
 const availableTags = computed<TagSelection>(() => {
   const tagSets: Record<TagKey, Set<string>> = {
@@ -50,138 +54,112 @@ const availableTags = computed<TagSelection>(() => {
     tone: new Set(),
     situation: new Set(),
     mood: new Set(),
-  }
+  };
   baseProducts.value.forEach((product) => {
     tagKeys.forEach((key) => {
-      product.tags[key].forEach((tag) => tagSets[key].add(tag))
-    })
-  })
+      product.tags[key].forEach((tag) => tagSets[key].add(tag));
+    });
+  });
   return tagKeys.reduce(
     (acc, key) => ({
       ...acc,
-      [key]: Array.from(tagSets[key]).sort((a, b) => a.localeCompare(b, 'ko-KR')),
+      [key]: Array.from(tagSets[key]).sort((a, b) =>
+        a.localeCompare(b, 'ko-KR')
+      ),
     }),
-    { ...emptySelection },
-  )
-})
+    { ...emptySelection }
+  );
+});
 
 const filteredProducts = computed(() => {
-  let result = baseProducts.value
+  let result = baseProducts.value;
 
   if (categoryLabel.value) {
-    result = result.filter((product) => product.category === categoryLabel.value)
+    result = result.filter(
+      (product) => product.category === categoryLabel.value
+    );
   } else if (productCategory.value !== 'all') {
-    result = result.filter((product) => product.productCategory === productCategory.value)
+    result = result.filter(
+      (product) => product.productCategory === productCategory.value
+    );
   }
 
   result = result.filter((product) =>
     tagKeys.every((key) => {
-      const selections = selectedTags.value[key]
-      if (!selections.length) return true
-      return selections.some((tag) => product.tags[key].includes(tag))
-    }),
-  )
+      const selections = selectedTags.value[key];
+      if (!selections.length) return true;
+      return selections.some((tag) => product.tags[key].includes(tag));
+    })
+  );
 
-  const sorted = [...result]
+  const sorted = [...result];
   switch (sortBy.value) {
     case 'ranking':
-      sorted.sort((a, b) => b.popularity - a.popularity)
-      break
+      sorted.sort((a, b) => b.popularity - a.popularity);
+      break;
     case 'price-low':
-      sorted.sort((a, b) => a.price - b.price)
-      break
+      sorted.sort((a, b) => a.price - b.price);
+      break;
     case 'price-high':
-      sorted.sort((a, b) => b.price - a.price)
-      break
+      sorted.sort((a, b) => b.price - a.price);
+      break;
     case 'sales':
-      sorted.sort((a, b) => b.salesVolume - a.salesVolume)
-      break
+      sorted.sort((a, b) => b.salesVolume - a.salesVolume);
+      break;
     case 'latest':
-      sorted.sort((a, b) => b.order - a.order)
-      break
+      sorted.sort((a, b) => b.order - a.order);
+      break;
   }
-  return sorted
-})
-
+  return sorted;
+});
 </script>
 
 <template>
-  <main class="page">
-    <div class="page__inner products">
-      <header class="header-row">
-        <div>
-          <h1 class="title">
-            {{ categoryLabel ?? '상품' }}
-            <span class="count">({{ filteredProducts.length }}개)</span>
-          </h1>
-        </div>
-      </header>
+  <PageContainer>
+    <PageHeader
+      eyebrow="DESKIT PRODUCT"
+      :title="categoryLabel ?? '상품'"
+      subtitle="당신의 책상을 완성할 아이템을 찾아보세요"
+    >
+      <template #headerRight>
+        <span class="count">({{ filteredProducts.length }}개)</span>
+      </template>
+    </PageHeader>
 
-      <section class="filters">
-<!--        <div class="filter-label">태그로 찾기</div>-->
-        <TagChipsFilter
-          v-model="selectedTags"
-          :available-tags="availableTags"
-          @update:productCategory="productCategory = $event"
+    <section class="filters">
+      <TagChipsFilter
+        v-model="selectedTags"
+        :available-tags="availableTags"
+        @update:productCategory="productCategory = $event"
+      />
+    </section>
+
+    <section class="sort-row">
+      <SortTabs v-model="sortBy" />
+    </section>
+
+    <section>
+      <div v-if="filteredProducts.length === 0" class="empty">
+        <p>조건에 맞는 상품이 없습니다.</p>
+        <p class="empty-sub">필터를 변경하거나 다른 카테고리를 선택해보세요.</p>
+      </div>
+      <div v-else class="grid">
+        <ProductListCard
+          v-for="product in filteredProducts"
+          :key="product.id"
+          :id="product.id"
+          :name="product.name"
+          :image-url="product.imageUrl"
+          :price="product.price"
+          :original-price="product.originalPrice"
+          :description="product.description"
         />
-      </section>
-
-      <section class="sort-row">
-        <SortTabs v-model="sortBy" />
-      </section>
-
-      <section>
-        <div v-if="filteredProducts.length === 0" class="empty">
-          <p>조건에 맞는 상품이 없습니다.</p>
-          <p class="empty-sub">필터를 변경하거나 다른 카테고리를 선택해보세요.</p>
-        </div>
-        <div v-else class="grid">
-          <ProductListCard
-            v-for="product in filteredProducts"
-            :key="product.id"
-            :id="product.id"
-            :name="product.name"
-            :image-url="product.imageUrl"
-            :price="product.price"
-            :original-price="product.originalPrice"
-            :description="product.description"
-          />
-        </div>
-      </section>
-    </div>
-  </main>
+      </div>
+    </section>
+  </PageContainer>
 </template>
 
 <style scoped>
-.products {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 0 2px 0;
-}
-
-.eyebrow {
-  margin: 0;
-  color: var(--text-soft);
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-
-.title {
-  margin: 4px 0 0;
-  font-size: 1.95rem;
-  font-weight: 800;
-  letter-spacing: -0.4px;
-}
-
 .count {
   color: var(--text-soft);
   font-size: 1rem;

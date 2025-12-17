@@ -118,7 +118,7 @@ const currentTags = computed(() => {
 
 .clear {
   border: 1px solid var(--border-color);
-  background: #fff;
+  background: var(--surface);
   color: var(--text-muted);
   padding: 8px 12px;
   border-radius: 999px;
@@ -129,8 +129,8 @@ const currentTags = computed(() => {
 
 .clear:hover {
   color: var(--text-strong);
-  border-color: rgba(255, 127, 80, 0.5);
-  background: rgba(255, 127, 80, 0.06);
+  border-color: var(--primary-color);
+  background: var(--hover-bg);
 }
 
 .tabs {
@@ -146,8 +146,8 @@ const currentTags = computed(() => {
 }
 
 .tab {
-  border: 1px solid #e5e7eb;
-  background: #fff;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
   color: var(--text-strong);
   padding: 10px 16px;
   min-height: 40px;
@@ -159,9 +159,9 @@ const currentTags = computed(() => {
 }
 
 .tab--active {
-  border-color: rgba(255, 127, 80, 0.6);
+  border-color: var(--primary-color);
   color: var(--primary-color);
-  background: rgba(255, 127, 80, 0.12);
+  background: var(--hover-bg);
 }
 
 .product-tabs {
@@ -191,8 +191,8 @@ const currentTags = computed(() => {
 }
 
 .chip {
-  border: 1px solid #e5e7eb;
-  background: #fff;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
   color: var(--text-muted);
   padding: 8px 12px;
   min-height: 34px;
@@ -204,14 +204,14 @@ const currentTags = computed(() => {
 
 .chip:hover {
   color: var(--text-strong);
-  border-color: rgba(255, 127, 80, 0.4);
-  background: rgba(255, 127, 80, 0.08);
+  border-color: var(--accent-color);
+  background: var(--hover-bg);
 }
 
 .chip--active {
-  background: rgba(255, 127, 80, 0.12);
+  background: var(--hover-bg);
   color: var(--primary-color);
-  border-color: rgba(255, 127, 80, 0.6);
+  border-color: var(--primary-color);
 }
 
 .empty {
