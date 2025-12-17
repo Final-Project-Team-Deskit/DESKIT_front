@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PageContainer from '../components/PageContainer.vue'
 import PageHeader from '../components/PageHeader.vue'
@@ -82,6 +82,14 @@ const toggleLike = () => {
   isLiked.value = !isLiked.value
 }
 
+const isSettingsOpen = ref(false)
+const settingsButtonRef = ref<HTMLElement | null>(null)
+const settingsPanelRef = ref<HTMLElement | null>(null)
+
+const toggleSettings = () => {
+  isSettingsOpen.value = !isSettingsOpen.value
+}
+
 type ChatMessage = {
   id: string
   user: string
@@ -155,6 +163,39 @@ const sendMessage = () => {
 onMounted(() => {
   scrollToBottom()
 })
+
+const handleDocumentClick = (event: MouseEvent) => {
+  if (!isSettingsOpen.value) {
+    return
+  }
+  const target = event.target as Node | null
+  if (
+    settingsButtonRef.value?.contains(target) ||
+    settingsPanelRef.value?.contains(target)
+  ) {
+    return
+  }
+  isSettingsOpen.value = false
+}
+
+const handleDocumentKeydown = (event: KeyboardEvent) => {
+  if (!isSettingsOpen.value) {
+    return
+  }
+  if (event.key === 'Escape') {
+    isSettingsOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick)
+  document.addEventListener('keydown', handleDocumentKeydown)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+  document.removeEventListener('keydown', handleDocumentKeydown)
+})
 </script>
 
 <template>
@@ -213,21 +254,76 @@ onMounted(() => {
           <span class="player-frame__label">LIVE 플레이어</span>
         </div>
 
-        <div class="player-controls">
-          <button type="button" class="control-btn" :class="{ 'control-btn--active': isLiked }" @click="toggleLike">
-            {{ isLiked ? '좋아요 취소' : '좋아요' }}
-          </button>
-          <button type="button" class="control-btn">볼륨</button>
-          <label class="control-select">
-            <span>화질</span>
-            <select>
-              <option>자동</option>
-              <option>1080p</option>
-              <option>720p</option>
-              <option>480p</option>
-            </select>
-          </label>
-          <button type="button" class="control-btn">전체화면</button>
+        <div class="player-toolbar">
+          <div class="player-toolbar__group player-toolbar__group--left">
+            <button
+              type="button"
+              class="toolbar-btn"
+              :class="{ 'toolbar-btn--active': isLiked }"
+              :aria-label="isLiked ? '좋아요 취소' : '좋아요'"
+              @click="toggleLike"
+            >
+              <svg class="toolbar-svg" viewBox="0 0 24 24" aria-hidden="true">
+                <path v-if="isLiked" d="M12.1 21.35l-1.1-1.02C5.14 15.24 2 12.39 2 8.99 2 6.42 4.02 4.5 6.58 4.5c1.54 0 3.04.74 3.92 1.91C11.38 5.24 12.88 4.5 14.42 4.5 16.98 4.5 19 6.42 19 8.99c0 3.4-3.14 6.25-8.9 11.34l-1.1 1.02z" fill="currentColor" />
+                <path v-else d="M12.1 21.35l-1.1-1.02C5.14 15.24 2 12.39 2 8.99 2 6.42 4.02 4.5 6.58 4.5c1.54 0 3.04.74 3.92 1.91C11.38 5.24 12.88 4.5 14.42 4.5 16.98 4.5 19 6.42 19 8.99c0 3.4-3.14 6.25-8.9 11.34l-1.1 1.02z" fill="none" stroke="currentColor" stroke-width="1.8" />
+              </svg>
+              <span class="toolbar-label">{{ isLiked ? '좋아요 취소' : '좋아요' }}</span>
+            </button>
+          </div>
+          <div class="player-toolbar__group player-toolbar__group--right">
+            <div class="toolbar-settings">
+              <button
+                ref="settingsButtonRef"
+                type="button"
+                class="toolbar-btn"
+                aria-controls="player-settings"
+                :aria-expanded="isSettingsOpen ? 'true' : 'false'"
+                aria-label="설정"
+                @click="toggleSettings"
+              >
+                <svg class="toolbar-svg" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                  <circle cx="9" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="1.8" />
+                  <circle cx="14" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.8" />
+                  <circle cx="7" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="1.8" />
+                </svg>
+                <span class="toolbar-label">설정</span>
+              </button>
+              <div
+                v-if="isSettingsOpen"
+                id="player-settings"
+                ref="settingsPanelRef"
+                class="settings-popover"
+              >
+                <label class="settings-row">
+                  <span class="settings-label">볼륨</span>
+                  <input
+                    class="toolbar-slider"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="60"
+                    aria-label="볼륨 조절"
+                  />
+                </label>
+                <label class="settings-row">
+                  <span class="settings-label">화질</span>
+                  <select class="settings-select" aria-label="화질">
+                    <option>자동</option>
+                    <option>1080p</option>
+                    <option>720p</option>
+                    <option>480p</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <button type="button" class="toolbar-btn" aria-label="전체화면">
+              <svg class="toolbar-svg" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="toolbar-label">전체화면</span>
+            </button>
+          </div>
         </div>
 
         <button v-if="status === 'ENDED'" type="button" class="vod-btn" @click="handleVod">
@@ -458,41 +554,129 @@ onMounted(() => {
   opacity: 0.8;
 }
 
-.player-controls {
+.player-toolbar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border-color);
+  background: var(--surface-weak);
+  border-radius: 12px;
+  flex-wrap: nowrap;
 }
 
-.control-btn,
-.control-select select {
+.player-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.player-toolbar__group--left {
+  justify-content: flex-start;
+}
+
+.player-toolbar__group--center {
+  justify-content: center;
+}
+
+.player-toolbar__group--right {
+  justify-content: flex-end;
+}
+
+.toolbar-btn,
+.settings-select {
   border: 1px solid var(--border-color);
   background: var(--surface);
   color: var(--text-strong);
   border-radius: 10px;
-  padding: 8px 12px;
+  height: 36px;
+  padding: 0 12px;
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
 }
 
-.control-btn {
+.toolbar-btn {
   cursor: pointer;
 }
 
-.control-btn--active {
+.toolbar-btn:hover,
+.settings-select:hover {
+  border-color: var(--primary-color);
+}
+
+.toolbar-btn:focus-visible,
+.settings-select:focus-visible,
+.toolbar-slider:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.toolbar-btn--active {
   border-color: var(--primary-color);
   color: var(--primary-color);
 }
 
-.control-select {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-soft);
-  font-weight: 700;
+.toolbar-svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
-.control-select select {
+.toolbar-label {
+  white-space: nowrap;
+}
+
+.toolbar-slider {
+  width: 100%;
+  height: 36px;
+  accent-color: var(--primary-color);
+  background: transparent;
+}
+
+.toolbar-settings {
+  position: relative;
+}
+
+.settings-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+  display: grid;
+  gap: 10px;
+  z-index: 5;
+}
+
+.settings-row {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.settings-select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 50%, calc(100% - 8px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 28px;
   cursor: pointer;
 }
 
@@ -618,8 +802,18 @@ onMounted(() => {
     padding: 14px;
   }
 
-  .player-controls {
+  .player-toolbar {
     gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .toolbar-label {
+    display: none;
+  }
+
+  .toolbar-btn {
+    height: 36px;
+    padding: 0 8px;
   }
 
   .chat-input {
