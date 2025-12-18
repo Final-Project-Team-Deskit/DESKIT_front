@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { productsData, flattenTags } from '../lib/products-data'
 import PageContainer from '../components/PageContainer.vue'
+import { upsertCartItem } from '../lib/cart/cart-storage'
 
 const route = useRoute()
+const router = useRouter()
 const productId = computed(() => (Array.isArray(route.params.id) ? route.params.id[0] : route.params.id))
 
 const product = computed(() => {
@@ -13,10 +15,10 @@ const product = computed(() => {
   return {
     ...raw,
     id: String(raw.product_id),
-    imageUrl: raw.imageUrl ?? '/placeholder-product.jpg',
-    description: raw.short_desc,
-    seller: raw.seller_id ? `판매자 #${raw.seller_id}` : undefined,
-    tags: raw.tags ?? { space: [], tone: [], situation: [], mood: [] },
+    imageUrl: (raw as any).imageUrl ?? (raw as any).image_url ?? '/placeholder-product.jpg',
+    description: (raw as any).short_desc ?? (raw as any).description,
+    seller: (raw as any).seller_id ? `판매자 #${(raw as any).seller_id}` : undefined,
+    tags: (raw as any).tags ?? { space: [], tone: [], situation: [], mood: [] },
     // NOTE: In production, HTML should be sanitized server-side or before rendering.
     detailHtml: (raw as any).detailHtml ?? '<h2>상품 상세</h2><p>판매자 에디터 HTML 영역입니다.</p>',
   }
@@ -31,27 +33,23 @@ const imageList = computed(() => {
   if (!product.value) return []
   const primary = product.value.imageUrl ?? '/placeholder-product.jpg'
   const images = [primary]
-  // Add a couple of fallback entries to demonstrate the gallery if only one image exists
-  while (images.length < 3) {
-    images.push(primary)
-  }
+  while (images.length < 3) images.push(primary)
   return images
 })
 
 const selectedImageIndex = ref(0)
-
 watch(
-  () => imageList.value,
-  () => {
-    selectedImageIndex.value = 0
-  },
+    () => imageList.value,
+    () => {
+      selectedImageIndex.value = 0
+    },
 )
 
 const selectedImage = computed(() => imageList.value[selectedImageIndex.value] ?? '/placeholder-product.jpg')
 
 const originalPrice = computed(() => {
   if (!product.value) return undefined
-  const candidate = product.value.cost_price ?? product.value.price
+  const candidate = (product.value as any).cost_price ?? product.value.price
   return candidate > product.value.price ? candidate : undefined
 })
 
@@ -63,21 +61,140 @@ const discountRate = computed(() => {
 
 const quantity = ref(1)
 
+const isCartModalOpen = ref(false)
+const modalCardRef = ref<HTMLDivElement | null>(null)
+const lastFocusedEl = ref<HTMLElement | null>(null)
+
 const decrease = () => {
   if (quantity.value > 1) quantity.value -= 1
 }
-
 const increase = () => {
   quantity.value += 1
 }
 
+const openModal = () => {
+  lastFocusedEl.value = (document.activeElement as HTMLElement) || null
+  isCartModalOpen.value = true
+}
+
+const closeModal = () => {
+  isCartModalOpen.value = false
+}
+
+const goToCart = async () => {
+  closeModal()
+  try {
+    await router.push({ name: 'cart' })
+  } catch {
+    await router.push('/cart')
+  }
+}
+
 const handleAddToCart = () => {
-  console.log('add to cart', { productId: product.value?.id, quantity: quantity.value })
+  if (!product.value) return
+
+  const salePrice = product.value.price
+  const orig = originalPrice.value ?? salePrice
+  const discount = orig > salePrice ? Math.round(((orig - salePrice) / orig) * 100) : 0
+
+  const imageUrl =
+      product.value.imageUrl ||
+      (product.value as any).image_url ||
+      (product.value as any).thumbnailUrl ||
+      (product.value as any).images?.[0] ||
+      ''
+
+  upsertCartItem({
+    productId: String((product.value as any).product_id ?? product.value.id),
+    name: product.value.name,
+    imageUrl,
+    price: salePrice,
+    originalPrice: orig,
+    discountRate: discount,
+    quantity: quantity.value,
+    stock: (product.value as any).stock ?? 99,
+    isSelected: true,
+  })
+
+  openModal()
 }
 
 const handleBuyNow = () => {
   console.log('buy now', { productId: product.value?.id, quantity: quantity.value })
 }
+
+const handleEsc = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && isCartModalOpen.value) {
+    closeModal()
+  }
+}
+
+// (Optional but nice) focus trap: keep tab focus inside modal
+const handleTrapFocus = (event: KeyboardEvent) => {
+  if (!isCartModalOpen.value) return
+  if (event.key !== 'Tab') return
+  const root = modalCardRef.value
+  if (!root) return
+
+  const focusables = Array.from(
+      root.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      ),
+  ).filter((el) => !el.hasAttribute('disabled') && !el.getAttribute('aria-disabled'))
+
+  if (focusables.length === 0) return
+
+  const first = focusables[0]
+  const last = focusables[focusables.length - 1]
+  const active = document.activeElement as HTMLElement | null
+
+  if (!event.shiftKey && active === last) {
+    event.preventDefault()
+    first.focus()
+  } else if (event.shiftKey && active === first) {
+    event.preventDefault()
+    last.focus()
+  }
+}
+
+watch(isCartModalOpen, (open) => {
+  // lock scroll
+  if (open) {
+    document.body.style.overflow = 'hidden'
+    // focus modal
+    requestAnimationFrame(() => {
+      const root = modalCardRef.value
+      const primaryBtn = root?.querySelector<HTMLElement>('.cart-modal__actions .btn.primary')
+      ;(primaryBtn ?? root)?.focus?.()
+    })
+  } else {
+    document.body.style.overflow = ''
+    // restore focus
+    requestAnimationFrame(() => {
+      lastFocusedEl.value?.focus?.()
+      lastFocusedEl.value = null
+    })
+  }
+})
+
+// close modal on route change
+watch(
+    () => route.fullPath,
+    () => {
+      if (isCartModalOpen.value) closeModal()
+    },
+)
+
+onMounted(() => {
+  window.addEventListener('keydown', handleEsc)
+  window.addEventListener('keydown', handleTrapFocus)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleEsc)
+  window.removeEventListener('keydown', handleTrapFocus)
+  document.body.style.overflow = ''
+})
 </script>
 
 <template>
@@ -88,12 +205,12 @@ const handleBuyNow = () => {
       <div class="media">
         <div class="thumbs" v-if="imageList.length">
           <button
-            v-for="(img, idx) in imageList"
-            :key="img + idx"
-            type="button"
-            class="thumb-btn"
-            :class="{ active: idx === selectedImageIndex }"
-            @click="selectedImageIndex = idx"
+              v-for="(img, idx) in imageList"
+              :key="img + idx"
+              type="button"
+              class="thumb-btn"
+              :class="{ active: idx === selectedImageIndex }"
+              @click="selectedImageIndex = idx"
           >
             <img :src="img" :alt="`${product.name} 썸네일 ${idx + 1}`" />
           </button>
@@ -102,6 +219,7 @@ const handleBuyNow = () => {
           <img :src="selectedImage" :alt="product.name" />
         </div>
       </div>
+
       <div class="info">
         <div class="content">
           <p class="eyebrow">DESKIT PRODUCT</p>
@@ -112,7 +230,9 @@ const handleBuyNow = () => {
             <span v-for="tag in flatTags" :key="tag" class="tag">#{{ tag }}</span>
           </div>
         </div>
+
         <div class="spacer" />
+
         <div class="purchase">
           <div class="price-box">
             <span v-if="discountRate > 0" class="badge">-{{ discountRate }}%</span>
@@ -121,6 +241,7 @@ const handleBuyNow = () => {
               <p class="final">{{ product.price.toLocaleString('ko-KR') }}원</p>
             </div>
           </div>
+
           <div class="qty">
             <span class="label">수량</span>
             <div class="stepper">
@@ -129,6 +250,7 @@ const handleBuyNow = () => {
               <button type="button" @click="increase">+</button>
             </div>
           </div>
+
           <div class="actions">
             <button type="button" class="btn secondary" @click="handleAddToCart">장바구니 담기</button>
             <button type="button" class="btn primary" @click="handleBuyNow">구매하기</button>
@@ -149,6 +271,26 @@ const handleBuyNow = () => {
         <div class="detail-html__content" v-html="product.detailHtml" />
       </div>
     </section>
+
+    <!-- ✅ Add-to-cart modal -->
+    <div
+        v-if="isCartModalOpen"
+        class="cart-modal__overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Added to cart dialog"
+        @click.self="closeModal"
+    >
+      <div ref="modalCardRef" class="cart-modal" tabindex="-1">
+        <h3 class="cart-modal__title">장바구니 담기 완료!</h3>
+        <p class="cart-modal__desc">장바구니에 상품이 추가되었습니다.</p>
+
+        <div class="cart-modal__actions">
+          <button type="button" class="btn secondary" @click="closeModal">계속 쇼핑하기</button>
+          <button type="button" class="btn primary" @click="goToCart">장바구니 보러가기</button>
+        </div>
+      </div>
+    </div>
   </PageContainer>
 </template>
 
@@ -476,6 +618,50 @@ h1 {
   margin: 10px 0;
 }
 
+/* ✅ modal */
+.cart-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.48);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  z-index: 9999;
+}
+
+.cart-modal {
+  width: min(520px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.24);
+  padding: 18px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  outline: none;
+}
+
+.cart-modal__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--text-strong);
+}
+
+.cart-modal__desc {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.cart-modal__actions {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 @media (max-width: 720px) {
   .detail-html {
     padding: 22px 0 30px;
@@ -505,6 +691,10 @@ h1 {
   .purchase {
     border-left: none;
     border-top: 1px solid var(--border-color);
+  }
+
+  .cart-modal__actions {
+    grid-template-columns: 1fr;
   }
 }
 </style>
