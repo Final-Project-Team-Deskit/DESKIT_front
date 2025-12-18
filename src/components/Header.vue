@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import {RouterLink, useRoute, useRouter} from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,12 +11,12 @@ const isAccountOpen = ref(false)
 const accountRef = ref<HTMLElement | null>(null)
 
 const navLinks = [
-  { label: '상품', to: '/products' },
-  { label: '셋업', to: '/setup' },
-  { label: '라이브', to: '/live' },
+  {label: '상품', to: '/products'},
+  {label: '셋업', to: '/setup'},
+  {label: '라이브', to: '/live'},
 ]
 
-const actionLinks = [{ label: '장바구니', to: '/cart', icon: 'cart' }]
+const actionLinks = [{label: '장바구니', to: '/cart', icon: 'cart'}]
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 8
@@ -32,7 +32,7 @@ const handleDocumentClick = (event: MouseEvent) => {
 
 onMounted(() => {
   handleScroll()
-  window.addEventListener('scroll', handleScroll, { passive: true })
+  window.addEventListener('scroll', handleScroll, {passive: true})
   window.addEventListener('keydown', onKeydown)
   document.addEventListener('click', handleDocumentClick)
 })
@@ -69,11 +69,11 @@ const onKeydown = (event: KeyboardEvent) => {
 }
 
 watch(
-  () => route.fullPath,
-  () => {
-    closeMenu()
-    closeAccount()
-  },
+    () => route.fullPath,
+    () => {
+      closeMenu()
+      closeAccount()
+    },
 )
 
 watch(isMenuOpen, (open) => {
@@ -89,7 +89,7 @@ const searchQuery = ref('')
 
 const submitSearch = () => {
   const q = searchQuery.value.trim()
-  router.push({ path: '/products', query: q ? { q } : undefined })
+  router.push({path: '/products', query: q ? {q} : undefined})
   closeMenu()
 }
 </script>
@@ -99,22 +99,22 @@ const submitSearch = () => {
     <div class="container">
       <div class="left">
         <RouterLink to="/" class="brand">
-          <img class="brand__logo" src="/DESKIT.png" alt="DESKIT" />
+          <img class="brand__logo" src="/DESKIT.png" alt="DESKIT"/>
         </RouterLink>
 
         <nav class="nav">
           <RouterLink
-            v-for="item in navLinks"
-            :key="item.to"
-            :to="item.to"
-            :class="[
+              v-for="item in navLinks"
+              :key="item.to"
+              :to="item.to"
+              :class="[
               'nav-link',
               {
                 'nav-link--live': item.to === '/live',
                 'nav-link--live-active': item.to === '/live' && isLiveActive,
               },
             ]"
-            active-class="nav-link--active"
+              active-class="nav-link--active"
           >
             {{ item.label }}
             <span v-if="item.to === '/live'" class="live-pill">LIVE</span>
@@ -126,85 +126,85 @@ const submitSearch = () => {
         <form class="search search--desktop" @submit.prevent="submitSearch">
           <svg class="search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path
-              d="M11 4a7 7 0 015.657 11.045l3.149 3.148-1.414 1.414-3.148-3.149A7 7 0 1111 4z"
-              stroke="currentColor"
-              stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-        <input v-model="searchQuery" class="search__input" type="search" placeholder="검색어를 입력하세요" />
+                d="M11 4a7 7 0 015.657 11.045l3.149 3.148-1.414 1.414-3.148-3.149A7 7 0 1111 4z"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            />
+          </svg>
+          <input v-model="searchQuery" class="search__input" type="search" placeholder="검색어를 입력하세요"/>
         </form>
         <div class="actions">
           <RouterLink
-            v-for="action in actionLinks"
-            :key="action.to"
-            :to="action.to"
-            class="action-link"
+              v-for="action in actionLinks"
+              :key="action.to"
+              :to="action.to"
+              class="action-link"
           >
             <svg v-if="action.icon === 'cart'" width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path
-                d="M6 6h15l-1.5 9h-12L5 4H3"
-                stroke="currentColor"
-                stroke-width="1.7"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                  d="M6 6h15l-1.5 9h-12L5 4H3"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
               />
-              <circle cx="9" cy="19" r="1.2" fill="currentColor" />
-              <circle cx="17" cy="19" r="1.2" fill="currentColor" />
+              <circle cx="9" cy="19" r="1.2" fill="currentColor"/>
+              <circle cx="17" cy="19" r="1.2" fill="currentColor"/>
             </svg>
             <svg v-else-if="action.icon === 'user'" width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path
-                d="M12 12a4 4 0 100-8 4 4 0 000 8z"
-                stroke="currentColor"
-                stroke-width="1.7"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                  d="M12 12a4 4 0 100-8 4 4 0 000 8z"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
               />
               <path
-                d="M5 20c.6-3 3.5-5 7-5s6.4 2 7 5"
-                stroke="currentColor"
-                stroke-width="1.7"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                  d="M5 20c.6-3 3.5-5 7-5s6.4 2 7 5"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
               />
             </svg>
             <span>{{ action.label }}</span>
           </RouterLink>
           <div class="account" ref="accountRef">
             <button
-              type="button"
-              class="account-btn"
-              aria-haspopup="menu"
-              :aria-expanded="isAccountOpen"
-              @click.stop="toggleAccount"
+                type="button"
+                class="account-btn"
+                aria-haspopup="menu"
+                :aria-expanded="isAccountOpen"
+                @click.stop="toggleAccount"
             >
               마이페이지
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
               </svg>
             </button>
             <transition name="fade">
               <div v-if="isAccountOpen" class="account-menu" role="menu">
+                <RouterLink to="/my" class="account-item" role="menuitem" @click="closeAccount">
+                  마이페이지
+                </RouterLink>
                 <RouterLink to="/my/orders" class="account-item" role="menuitem" @click="closeAccount">
                   주문내역
                 </RouterLink>
-                <span class="account-item account-item--disabled" role="menuitem" aria-disabled="true">
-                  마이페이지 홈 (준비중)
-                </span>
               </div>
             </transition>
           </div>
           <button
-            type="button"
-            class="icon-btn menu-btn"
-            aria-label="메뉴"
-            :aria-expanded="isMenuOpen"
-            aria-controls="mobile-menu"
-            @click.stop="toggleMenu"
+              type="button"
+              class="icon-btn menu-btn"
+              aria-label="메뉴"
+              :aria-expanded="isMenuOpen"
+              aria-controls="mobile-menu"
+              @click.stop="toggleMenu"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
           </button>
         </div>
@@ -212,49 +212,49 @@ const submitSearch = () => {
     </div>
 
     <transition name="fade">
-      <div v-if="isMenuOpen" class="overlay" @click="closeMenu" />
+      <div v-if="isMenuOpen" class="overlay" @click="closeMenu"/>
     </transition>
     <transition name="slide-down">
       <div
-        v-if="isMenuOpen"
-        id="mobile-menu"
-        class="mobile-menu"
-        role="dialog"
-        aria-label="모바일 메뉴"
-        ref="panelRef"
+          v-if="isMenuOpen"
+          id="mobile-menu"
+          class="mobile-menu"
+          role="dialog"
+          aria-label="모바일 메뉴"
+          ref="panelRef"
       >
         <form class="search search--mobile" @submit.prevent="submitSearch">
           <svg class="search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path
-              d="M11 4a7 7 0 015.657 11.045l3.149 3.148-1.414 1.414-3.148-3.149A7 7 0 1111 4z"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+                d="M11 4a7 7 0 015.657 11.045l3.149 3.148-1.414 1.414-3.148-3.149A7 7 0 1111 4z"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
             />
           </svg>
           <input
-            v-model="searchQuery"
-            class="search__input"
-            type="search"
-            placeholder="검색어를 입력하세요"
+              v-model="searchQuery"
+              class="search__input"
+              type="search"
+              placeholder="검색어를 입력하세요"
           />
         </form>
         <div class="mobile-menu__header">
           <span class="mobile-menu__title">메뉴</span>
           <button type="button" class="icon-btn" aria-label="메뉴 닫기" @click="closeMenu">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
           </button>
         </div>
         <nav class="mobile-menu__nav">
           <RouterLink
-            v-for="item in navLinks"
-            :key="item.to"
-            :to="item.to"
-            class="mobile-menu__link"
-            @click="closeMenu"
+              v-for="item in navLinks"
+              :key="item.to"
+              :to="item.to"
+              class="mobile-menu__link"
+              @click="closeMenu"
           >
             {{ item.label }}
             <span v-if="item.to === '/live'" class="live-pill live-pill--inline">LIVE</span>
@@ -262,11 +262,11 @@ const submitSearch = () => {
         </nav>
         <div class="mobile-menu__actions">
           <RouterLink
-            v-for="action in actionLinks"
-            :key="action.to"
-            :to="action.to"
-            class="mobile-menu__link"
-            @click="closeMenu"
+              v-for="action in actionLinks"
+              :key="action.to"
+              :to="action.to"
+              class="mobile-menu__link"
+              @click="closeMenu"
           >
             {{ action.label }}
           </RouterLink>
