@@ -4,12 +4,21 @@ import { RouterLink } from 'vue-router'
 import PageContainer from '../components/PageContainer.vue'
 import PageHeader from '../components/PageHeader.vue'
 import { loadOrders, updateOrder, type OrderReceipt } from '../lib/order/order-storage'
+import { productsData } from '../lib/products-data'
 
 const orders = ref<OrderReceipt[]>([])
 const isModalOpen = ref(false)
 const selectedOrderId = ref<string | null>(null)
-const cancelReason = ref('')
+const cancelReasonCategory = ref('')
 const cancelError = ref('')
+const cancelReasons = [
+  '단순 변심',
+  '가격/혜택(쿠폰·프로모션) 불만',
+  '옵션/수량/정보를 잘못 선택',
+  '배송이 늦을 것 같아서(일정 문제)',
+  '재고 없음/판매자 사정으로 취소(품절 포함)',
+  '기타',
+]
 
 const statusLabel = (status?: OrderReceipt['status']) => {
   const map: Record<string, string> = {
@@ -37,12 +46,48 @@ const formatDate = (value: string) => {
   return `${yy}.${mm}.${dd}`
 }
 
+const formatDateTime = (value: string) => {
+  const d = new Date(value)
+  const yy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${yy}.${mm}.${dd} ${hh}:${mi}`
+}
+
 const formatPrice = (value: number) => `${value.toLocaleString('ko-KR')}원`
 
 const titleOf = (order: OrderReceipt) => {
   const base = order.items[0]?.name ?? '상품'
   if (order.items.length > 1) return `${base} 외 ${order.items.length - 1}건`
   return base
+}
+
+const productImageOf = (productId: string) => {
+  const p = productsData.find((x: any) => String(x.product_id) === String(productId))
+  return String(p?.imageUrl ?? p?.image ?? p?.thumbnail ?? p?.thumb ?? '')
+}
+
+const thumbOf = (order: OrderReceipt) => {
+  const first = (order.items?.[0] ?? {}) as any
+  const direct =
+    first?.image ??
+    first?.thumbnail ??
+    first?.thumb ??
+    first?.imageUrl ??
+    first?.img ??
+    ''
+  if (direct) return String(direct)
+
+  const pid =
+    first?.productId ??
+    first?.product_id ??
+    first?.id ??
+    first?.productID ??
+    null
+
+  return pid != null && String(pid) !== '' ? productImageOf(String(pid)) : ''
 }
 
 const quantityOf = (order: OrderReceipt) =>
@@ -55,7 +100,7 @@ const isCancelRequested = (status?: OrderReceipt['status']) =>
 
 const openModal = (orderId: string) => {
   selectedOrderId.value = orderId
-  cancelReason.value = ''
+  cancelReasonCategory.value = ''
   cancelError.value = ''
   isModalOpen.value = true
 }
@@ -63,19 +108,21 @@ const openModal = (orderId: string) => {
 const closeModal = () => {
   isModalOpen.value = false
   selectedOrderId.value = null
-  cancelReason.value = ''
+  cancelReasonCategory.value = ''
   cancelError.value = ''
 }
 
 const submitCancel = () => {
   if (!selectedOrderId.value) return
-  if (!cancelReason.value.trim()) {
-    cancelError.value = '취소 사유를 입력해주세요.'
+  if (!cancelReasonCategory.value.trim()) {
+    cancelError.value = '취소 사유를 선택해주세요.'
     return
   }
   updateOrder(selectedOrderId.value, {
     status: 'CANCEL_REQUESTED',
-    cancelReason: cancelReason.value.trim(),
+    cancelReason: cancelReasonCategory.value,
+    // store timestamp for cancel request display
+    cancelRequestedAt: new Date().toISOString(),
   })
   load()
   closeModal()
@@ -109,24 +156,51 @@ onBeforeUnmount(() => {
       <article v-for="order in orders" :key="order.orderId" class="history-card">
         <div class="card-grid">
           <div class="info">
-            <div class="info__row">
-              <h3 class="title">{{ titleOf(order) }}</h3>
-              <span class="date">{{ formatDate(order.createdAt) }}</span>
+            <div class="info__row header">
+              <div class="thumb" :class="{ 'thumb--empty': !thumbOf(order) }">
+                <img
+                  v-if="thumbOf(order)"
+                  :src="thumbOf(order)"
+                  :alt="order.items[0]?.name || '상품'"
+                />
+                <span v-else class="thumb__ph">DESKIT</span>
+              </div>
+              <div class="header-block">
+                <h3 class="title">{{ titleOf(order) }}</h3>
+                <div class="meta-row">
+                  <span class="order-id">주문번호 · {{ order.orderId }}</span>
+                  <span class="date">{{ formatDate(order.createdAt) }}</span>
+                </div>
+              </div>
             </div>
-            <div class="chips">
-              <span class="chip">총 금액 · {{ formatPrice(order.totals.total) }}</span>
-              <span class="chip">수량 · {{ quantityOf(order) }}개</span>
-              <span class="chip chip--orderid">주문번호 · {{ order.orderId }}</span>
-            </div>
-            <details v-if="isCancelRequested(order.status)" class="reason-box">
-              <summary>취소 사유 보기</summary>
-              <p class="reason-text">
-                {{ order.cancelReason?.trim() ? order.cancelReason : '사유가 입력되지 않았습니다.' }}
-              </p>
+            <details v-if="isCancelRequested(order.status)" class="reason-disclosure">
+              <summary class="reason-summary">취소 사유 보기</summary>
+              <div class="reason-panel">
+                <div class="reason-meta">
+                  <span class="reason-meta__label">취소 요청</span>
+                  <span class="reason-meta__time">
+                    {{
+                      formatDateTime(
+                        (order as any).cancelRequestedAt
+                          ? String((order as any).cancelRequestedAt)
+                          : order.createdAt,
+                      )
+                    }}
+                  </span>
+                </div>
+                <p class="reason-text">
+                  {{ order.cancelReason?.trim() ? order.cancelReason : '사유가 입력되지 않았습니다.' }}
+                </p>
+              </div>
             </details>
+
             <details class="items-dropdown">
               <summary>주문 상품 보기 ({{ order.items.length }})</summary>
               <div class="items-list">
+                <div class="items-meta">
+                  <span>총 금액 · {{ formatPrice(order.totals.total) }}</span>
+                  <span>수량 · {{ quantityOf(order) }}개</span>
+                </div>
                 <div class="items-header">
                   <span>상품</span>
                   <span>구매가(합계)</span>
@@ -155,26 +229,23 @@ onBeforeUnmount(() => {
               </div>
             </details>
           </div>
+
           <div class="actions">
-            <span class="status-pill" :data-status="order.status ?? 'PAID'">
-              {{ statusLabel(order.status) }}
-            </span>
-            <button
-              v-if="canCancel(order.status) && !isCancelRequested(order.status)"
-              type="button"
-              class="btn cancel"
-              @click="openModal(order.orderId)"
-            >
-              취소 요청
-            </button>
-            <button
-              v-else-if="isCancelRequested(order.status)"
-              type="button"
-              class="btn disabled"
-              disabled
-            >
-              취소 요청됨
-            </button>
+            <div class="status-block">
+              <span class="status-pill" :data-status="order.status ?? 'PAID'">
+                {{ statusLabel(order.status) }}
+              </span>
+            </div>
+            <div class="action-block">
+              <button
+                v-if="canCancel(order.status) && !isCancelRequested(order.status)"
+                type="button"
+                class="btn cancel"
+                @click="openModal(order.orderId)"
+              >
+                취소 요청
+              </button>
+            </div>
           </div>
         </div>
       </article>
@@ -197,7 +268,12 @@ onBeforeUnmount(() => {
           </div>
           <label class="field">
             <span class="field__label">취소 사유</span>
-            <textarea v-model="cancelReason" rows="3" placeholder="취소 사유를 입력해주세요" />
+            <select v-model="cancelReasonCategory">
+              <option value="" disabled>사유를 선택해주세요</option>
+              <option v-for="reason in cancelReasons" :key="reason" :value="reason">
+                {{ reason }}
+              </option>
+            </select>
             <p v-if="cancelError" class="error">{{ cancelError }}</p>
           </label>
           <div class="modal__actions">
@@ -243,6 +319,8 @@ onBeforeUnmount(() => {
   border-radius: 14px;
   background: var(--surface);
   padding: 14px;
+  --panel-max-width: 820px;
+  --panel-width: min(100%, var(--panel-max-width));
 }
 
 .card-grid {
@@ -250,6 +328,31 @@ onBeforeUnmount(() => {
   grid-template-columns: 1fr auto;
   gap: 16px;
   align-items: start;
+}
+
+.header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.header-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meta-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.order-id {
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 
 .info {
@@ -275,36 +378,11 @@ onBeforeUnmount(() => {
 .date {
   color: var(--text-muted);
   font-weight: 700;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 6px;
-  align-items: center;
-}
-
-.chip {
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-weight: 700;
-  font-size: 13px;
-  background: var(--surface-weak);
-  color: var(--text-strong);
-  max-width: 100%;
-}
-
-.chip--orderid {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 0.9rem;
 }
 
 .items-dropdown {
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .items-dropdown summary {
@@ -312,71 +390,164 @@ onBeforeUnmount(() => {
   list-style: none;
   font-weight: 800;
   color: var(--primary-color);
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 4px;
+  width: var(--panel-width);
+  max-width: var(--panel-max-width);
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
 }
 
 .items-dropdown summary::-webkit-details-marker {
   display: none;
 }
 
-.items-dropdown summary::after {
-  content: '▾';
-  font-weight: 900;
+.items-dropdown summary:hover,
+.items-dropdown summary:focus-visible {
+  background: #f2f2f2;
 }
 
-details[open] > summary::after {
-  content: '▴';
+.items-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.92rem;
+  padding: 2px 2px 6px;
 }
 
-.reason-box {
+.reason-disclosure {
   margin-top: 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 10px;
-  background: var(--surface-weak);
 }
 
-.reason-box summary {
+.reason-summary {
   cursor: pointer;
   font-weight: 800;
   color: var(--text-muted);
   list-style: none;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 4px;
+  width: var(--panel-width);
+  max-width: var(--panel-max-width);
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
 }
 
-.reason-box summary::-webkit-details-marker {
+.reason-summary::-webkit-details-marker {
   display: none;
 }
 
-.reason-box summary::after {
+.reason-summary::after {
   content: '▾';
   font-weight: 900;
+  opacity: 0.7;
 }
 
-.reason-box[open] summary::after {
+.reason-disclosure[open] .reason-summary::after {
   content: '▴';
 }
 
+.reason-summary:hover,
+.reason-summary:focus-visible {
+  background: #f2f2f2;
+}
+
+.reason-panel {
+  margin-top: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: #f5f5f5;
+  padding: 10px;
+  width: var(--panel-width);
+  max-width: var(--panel-max-width);
+  margin: 0;
+}
+
 .reason-text {
-  margin: 6px 0 0;
+  margin: 0;
   color: var(--text-strong);
   font-weight: 700;
   line-height: 1.45;
+}
+
+.reason-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.reason-meta__label {
+  font-weight: 800;
+}
+
+.reason-meta__time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--surface-weak);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb__ph {
+  font-weight: 900;
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+}
+
+.thumb--empty {
+  background: linear-gradient(135deg, var(--surface-weak), var(--surface));
 }
 
 .items-list {
   margin-top: 8px;
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  background: var(--surface-weak);
+  background: #f5f5f5;
   padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: var(--panel-width);
+  max-width: var(--panel-max-width);
+  margin: 0;
+}
+
+.items-dropdown[open] .items-list {
+  border-color: rgba(17, 24, 39, 0.18);
+}
+
+.reason-disclosure[open] .reason-panel {
+  border: 1px solid rgba(17, 24, 39, 0.18);
 }
 
 .items-header {
@@ -445,6 +616,19 @@ details[open] > summary::after {
   flex-direction: column;
   gap: 10px;
   align-items: flex-end;
+  min-width: 160px;
+}
+
+.action-block {
+  margin-top: auto;
+  align-self: flex-end;
+}
+
+.status-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
 }
 
 .status-pill {
@@ -463,9 +647,9 @@ details[open] > summary::after {
 }
 
 .status-pill[data-status='PAID'] {
-  border-color: var(--primary-color, var(--border-color));
-  color: var(--primary-color, var(--text-strong));
-  background: var(--surface);
+  border-color: rgba(34, 197, 94, 0.55);
+  color: #16a34a;
+  background: rgba(34, 197, 94, 0.1);
 }
 
 .status-pill[data-status='CREATED'] {
@@ -473,9 +657,9 @@ details[open] > summary::after {
 }
 
 .status-pill[data-status='CANCEL_REQUESTED'] {
-  border-color: #e7a100;
-  color: #a46a00;
-  background: rgba(231, 161, 0, 0.1);
+  border-color: rgba(209, 67, 67, 0.5);
+  color: #d14343;
+  background: rgba(209, 67, 67, 0.1);
 }
 
 .status-pill[data-status='CANCELED'] {
@@ -499,19 +683,18 @@ details[open] > summary::after {
   background: var(--surface);
   font-weight: 800;
   cursor: pointer;
+  min-height: 40px;
+  min-width: 96px;
 }
 
 .btn.cancel {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-  font-weight: 800;
-}
-
-.btn.disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background: var(--surface-weak);
-  color: var(--text-muted);
+  border: none;
+  background: transparent;
+  color: var(--text-strong);
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .btn.ghost {
@@ -519,9 +702,23 @@ details[open] > summary::after {
 }
 
 .btn.primary {
-  background: var(--primary-color, var(--surface));
-  border-color: var(--primary-color, var(--border-color));
-  color: var(--primary-color, var(--text-strong));
+  background: var(--primary-color, #111827);
+  border-color: var(--primary-color, #111827);
+  color: #fff;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #e5e7eb;
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+
+.btn.cancel:hover,
+.btn.cancel:focus-visible {
+  text-decoration: underline;
+  outline: none;
 }
 
 .modal-overlay {
@@ -561,7 +758,7 @@ details[open] > summary::after {
   border-radius: 10px;
   padding: 10px;
   margin-bottom: 10px;
-  background: var(--surface-weak);
+  background: #f5f5f5;
 }
 
 .field {
@@ -582,6 +779,22 @@ details[open] > summary::after {
   padding: 10px;
   resize: vertical;
   min-height: 80px;
+}
+
+.field select {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--surface);
+  font-weight: 700;
+  color: var(--text-strong);
+  outline: none;
+}
+
+.field select:focus-visible {
+  outline: 2px solid #d1d5db;
+  outline-offset: 2px;
 }
 
 .error {
@@ -616,17 +829,27 @@ details[open] > summary::after {
   .actions {
     align-items: flex-start;
   }
+  .status-block {
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 640px) {
   .card-grid {
     grid-template-columns: 1fr;
   }
+  .header {
+    align-items: center;
+  }
   .actions {
     align-items: flex-start;
     flex-direction: row;
     flex-wrap: wrap;
     gap: 8px;
+    min-width: 0;
+  }
+  .status-block {
+    align-items: flex-start;
   }
 }
 </style>
