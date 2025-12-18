@@ -4,6 +4,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { productsData, flattenTags } from '../lib/products-data'
 import PageContainer from '../components/PageContainer.vue'
 import { upsertCartItem } from '../lib/cart/cart-storage'
+import { createCheckoutFromBuyNow, saveCheckout } from '../lib/checkout/checkout-storage'
 
 const route = useRoute()
 const router = useRouter()
@@ -120,7 +121,10 @@ const handleAddToCart = () => {
 }
 
 const handleBuyNow = () => {
-  console.log('buy now', { productId: product.value?.id, quantity: quantity.value })
+  if (!product.value) return
+  const draft = createCheckoutFromBuyNow(product.value, quantity.value)
+  saveCheckout(draft)
+  router.push({ name: 'checkout' }).catch(() => router.push('/checkout'))
 }
 
 const handleEsc = (event: KeyboardEvent) => {
@@ -278,7 +282,7 @@ onBeforeUnmount(() => {
         class="cart-modal__overlay"
         role="dialog"
         aria-modal="true"
-        aria-label="Added to cart dialog"
+        aria-label="장바구니 담기 모달"
         @click.self="closeModal"
     >
       <div ref="modalCardRef" class="cart-modal" tabindex="-1">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import PageContainer from '../components/PageContainer.vue'
 import PageHeader from '../components/PageHeader.vue'
 import {
@@ -11,7 +12,9 @@ import {
   updateSelection,
   type StoredCartItem,
 } from '../lib/cart/cart-storage'
+import { createCheckoutFromCart, saveCheckout } from '../lib/checkout/checkout-storage'
 
+const router = useRouter()
 const cartItems = ref<StoredCartItem[]>(loadCart())
 
 const formatPrice = (value: number) => `${value.toLocaleString('ko-KR')}원`
@@ -90,19 +93,22 @@ const clearCart = () => {
 
 const handleCheckout = () => {
   if (selectedCount.value === 0) return
-  // Placeholder: replace with real checkout flow
-  console.log('checkout items', selectedItems.value.map((item) => item.id))
+  const draft = createCheckoutFromCart(selectedItems.value)
+  saveCheckout(draft)
+  router.push({ name: 'checkout' }).catch(() => router.push('/checkout'))
 }
 
 const storageRefreshHandler = () => refresh()
 
 onMounted(() => {
   window.addEventListener('deskit-cart-updated', storageRefreshHandler)
+  window.addEventListener('storage', storageRefreshHandler)
   refresh()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('deskit-cart-updated', storageRefreshHandler)
+  window.removeEventListener('storage', storageRefreshHandler)
 })
 </script>
 
