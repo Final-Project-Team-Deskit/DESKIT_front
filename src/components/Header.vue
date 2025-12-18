@@ -7,6 +7,8 @@ const router = useRouter()
 const isScrolled = ref(false)
 const isMenuOpen = ref(false)
 const panelRef = ref<HTMLElement | null>(null)
+const isAccountOpen = ref(false)
+const accountRef = ref<HTMLElement | null>(null)
 
 const navLinks = [
   { label: '상품', to: '/products' },
@@ -14,20 +16,18 @@ const navLinks = [
   { label: '라이브', to: '/live' },
 ]
 
-const actionLinks = [
-  { label: '장바구니', to: '/cart', icon: 'cart' },
-  { label: '마이페이지', to: '/mypage', icon: 'user' },
-]
+const actionLinks = [{ label: '장바구니', to: '/cart', icon: 'cart' }]
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 8
 }
 
 const handleDocumentClick = (event: MouseEvent) => {
-  if (!isMenuOpen.value) return
   const target = event.target as Node
-  if (panelRef.value && panelRef.value.contains(target)) return
+  if (isMenuOpen.value && panelRef.value && panelRef.value.contains(target)) return
+  if (isAccountOpen.value && accountRef.value && accountRef.value.contains(target)) return
   closeMenu()
+  closeAccount()
 }
 
 onMounted(() => {
@@ -53,9 +53,18 @@ const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
 }
 
+const closeAccount = () => {
+  isAccountOpen.value = false
+}
+
+const toggleAccount = () => {
+  isAccountOpen.value = !isAccountOpen.value
+}
+
 const onKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     closeMenu()
+    closeAccount()
   }
 }
 
@@ -63,6 +72,7 @@ watch(
   () => route.fullPath,
   () => {
     closeMenu()
+    closeAccount()
   },
 )
 
@@ -119,11 +129,11 @@ const submitSearch = () => {
               d="M11 4a7 7 0 015.657 11.045l3.149 3.148-1.414 1.414-3.148-3.149A7 7 0 1111 4z"
               stroke="currentColor"
               stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <input v-model="searchQuery" class="search__input" type="search" placeholder="검색어를 입력하세요" />
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <input v-model="searchQuery" class="search__input" type="search" placeholder="검색어를 입력하세요" />
         </form>
         <div class="actions">
           <RouterLink
@@ -161,6 +171,30 @@ const submitSearch = () => {
             </svg>
             <span>{{ action.label }}</span>
           </RouterLink>
+          <div class="account" ref="accountRef">
+            <button
+              type="button"
+              class="account-btn"
+              aria-haspopup="menu"
+              :aria-expanded="isAccountOpen"
+              @click.stop="toggleAccount"
+            >
+              마이페이지
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+            </button>
+            <transition name="fade">
+              <div v-if="isAccountOpen" class="account-menu" role="menu">
+                <RouterLink to="/my/orders" class="account-item" role="menuitem" @click="closeAccount">
+                  주문내역
+                </RouterLink>
+                <span class="account-item account-item--disabled" role="menuitem" aria-disabled="true">
+                  마이페이지 홈 (준비중)
+                </span>
+              </div>
+            </transition>
+          </div>
           <button
             type="button"
             class="icon-btn menu-btn"
@@ -236,6 +270,9 @@ const submitSearch = () => {
           >
             {{ action.label }}
           </RouterLink>
+          <RouterLink to="/my/orders" class="mobile-menu__link" @click="closeMenu">
+            주문내역
+          </RouterLink>
         </div>
       </div>
     </transition>
@@ -268,6 +305,53 @@ const submitSearch = () => {
 .header--scrolled {
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
   border-color: rgba(15, 23, 42, 0.06);
+}
+
+.account {
+  position: relative;
+}
+
+.account-btn {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.account-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 160px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 5;
+}
+
+.account-item {
+  padding: 10px 12px;
+  color: var(--text-strong);
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.account-item:hover {
+  background: var(--surface-weak);
+}
+
+.account-item--disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
 }
 
 .left {

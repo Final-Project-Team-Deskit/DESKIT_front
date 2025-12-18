@@ -13,7 +13,7 @@ import {
   type PaymentMethod,
 } from '../lib/checkout/checkout-storage'
 import { removeCartItemsByProductIds } from '../lib/cart/cart-storage'
-import { saveLastOrder, type OrderReceipt } from '../lib/order/order-storage'
+import { saveLastOrder, appendOrder, type OrderReceipt } from '../lib/order/order-storage'
 
 const router = useRouter()
 const route = useRoute()
@@ -201,6 +201,7 @@ const handlePaymentComplete = () => {
       discountRate: item.discountRate ?? 0,
     })),
     shipping: {...current.shipping},
+    status: 'PAID',
     paymentMethodLabel: '토스페이(예정)',
     totals: {
       listPriceTotal,
@@ -212,6 +213,7 @@ const handlePaymentComplete = () => {
   }
 
   saveLastOrder(receipt)
+  appendOrder(receipt)
   removeCartItemsByProductIds(current.items.map((it) => it.productId))
   clearCheckout()
   router.push({name: 'order-complete'}).catch(() => router.push('/order/complete'))
