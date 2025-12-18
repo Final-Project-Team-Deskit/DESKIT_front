@@ -5,10 +5,15 @@ import PageContainer from '../components/PageContainer.vue'
 import PageHeader from '../components/PageHeader.vue'
 import {
   loadCheckout,
+  clearCheckout,
   updateShipping,
+  updatePaymentMethod,
   type CheckoutDraft,
   type ShippingInfo,
+  type PaymentMethod,
 } from '../lib/checkout/checkout-storage'
+import { removeCartItemsByProductIds } from '../lib/cart/cart-storage'
+import { saveLastOrder, type OrderReceipt } from '../lib/order/order-storage'
 
 const router = useRouter()
 const route = useRoute()
@@ -21,6 +26,7 @@ const form = reactive<ShippingInfo>({
   address1: '',
   address2: '',
 })
+const paymentMethod = ref<PaymentMethod | null>(null)
 
 const errors = reactive<Record<keyof ShippingInfo, string>>({
   buyerName: '',
@@ -30,19 +36,19 @@ const errors = reactive<Record<keyof ShippingInfo, string>>({
 })
 
 const step = computed<'shipping' | 'payment'>(() =>
-  route.query.step === 'payment' ? 'payment' : 'shipping',
+    route.query.step === 'payment' ? 'payment' : 'shipping',
 )
 
 const items = computed(() => draft.value?.items ?? [])
 const listPriceTotal = computed(() =>
-  items.value.reduce((sum, item) => {
-    const base =
-      item.originalPrice && item.originalPrice > item.price ? item.originalPrice : item.price
-    return sum + base * item.quantity
-  }, 0),
+    items.value.reduce((sum, item) => {
+      const base =
+          item.originalPrice && item.originalPrice > item.price ? item.originalPrice : item.price
+      return sum + base * item.quantity
+    }, 0),
 )
 const salePriceTotal = computed(() =>
-  items.value.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    items.value.reduce((sum, item) => sum + item.price * item.quantity, 0),
 )
 const discountTotal = computed(() => {
   const diff = listPriceTotal.value - salePriceTotal.value
@@ -54,7 +60,7 @@ const shippingFee = computed(() => {
 })
 const total = computed(() => salePriceTotal.value + shippingFee.value)
 const totalQuantity = computed(() =>
-  items.value.reduce((sum, item) => sum + item.quantity, 0),
+    items.value.reduce((sum, item) => sum + item.quantity, 0),
 )
 
 const formatPrice = (value: number) => `${value.toLocaleString('ko-KR')}원`
@@ -67,6 +73,7 @@ const refreshDraft = () => {
   form.zipcode = draft.value.shipping?.zipcode ?? ''
   form.address1 = draft.value.shipping?.address1 ?? ''
   form.address2 = draft.value.shipping?.address2 ?? ''
+  paymentMethod.value = draft.value.paymentMethod ?? null
 }
 
 const persistField = (field: keyof ShippingInfo, value: string) => {
@@ -78,7 +85,15 @@ const persistField = (field: keyof ShippingInfo, value: string) => {
   }
 
   form[field] = sanitized
-  const updated = updateShipping({ [field]: sanitized } as Partial<ShippingInfo>)
+  const updated = updateShipping({[field]: sanitized} as Partial<ShippingInfo>)
+  if (updated) {
+    draft.value = updated
+  }
+}
+
+const persistPayment = (method: PaymentMethod) => {
+  paymentMethod.value = method
+  const updated = updatePaymentMethod(method)
   if (updated) {
     draft.value = updated
   }
@@ -118,13 +133,19 @@ const canProceed = computed(() => {
   const name = form.buyerName.trim()
   const zip = form.zipcode.trim()
   const addr1 = form.address1.trim()
-  return /^[a-zA-Z가-힣 ]{1,6}$/.test(name) && /^[0-9]{5}$/.test(zip) && !!addr1
+  return (
+      /^[a-zA-Z가-힣 ]{1,6}$/.test(name) &&
+      /^[0-9]{5}$/.test(zip) &&
+      !!addr1 &&
+      paymentMethod.value !== null
+  )
 })
 
 const handleNext = () => {
   if (!validate()) return
-  updateShipping({ ...form })
-  router.push({ path: '/checkout', query: { step: 'payment' } }).catch(() => {})
+  updateShipping({...form})
+  router.push({path: '/checkout', query: {step: 'payment'}}).catch(() => {
+  })
 }
 
 const handleBack = () => {
@@ -132,7 +153,68 @@ const handleBack = () => {
 }
 
 const goShipping = () => {
-  router.push({ path: '/checkout' }).catch(() => {})
+  router.push({path: '/checkout'}).catch(() => {
+  })
+}
+
+const generateOrderId = () => {
+  const now = new Date()
+  const yy = String(now.getFullYear()).slice(2)
+  const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const dd = String(now.getDate()).padStart(2, '0')
+  const rand = Math.random().toString(16).slice(2, 6).toUpperCase()
+  return `ORD-${yy}${mm}${dd}-${rand}`
+}
+
+const handlePaymentComplete = () => {
+  const current = draft.value ?? loadCheckout()
+  if (!current || !current.items || current.items.length === 0) {
+    router.push('/cart')
+    return
+  }
+
+  const listPriceTotal = current.items.reduce((sum, item) => {
+    const base =
+        item.originalPrice && item.originalPrice > item.price ? item.originalPrice : item.price
+    return sum + base * item.quantity
+  }, 0)
+  const salePriceTotal = current.items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+  )
+  const discountTotal = Math.max(0, listPriceTotal - salePriceTotal)
+  const shippingFee =
+      salePriceTotal >= 50000 ? 0 : current.items.length > 0 ? 3000 : 0
+
+  const receipt: OrderReceipt = {
+    orderId: generateOrderId(),
+    createdAt: new Date().toISOString(),
+    items: current.items.map((item) => ({
+      productId: item.productId,
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+      originalPrice:
+          item.originalPrice && item.originalPrice > item.price
+              ? item.originalPrice
+              : item.price,
+      discountRate: item.discountRate ?? 0,
+    })),
+    shipping: {...current.shipping},
+    paymentMethodLabel: '토스페이(예정)',
+    totals: {
+      listPriceTotal,
+      salePriceTotal,
+      discountTotal,
+      shippingFee,
+      total: salePriceTotal + shippingFee,
+    },
+  }
+
+  saveLastOrder(receipt)
+  removeCartItemsByProductIds(current.items.map((it) => it.productId))
+  clearCheckout()
+  router.push({name: 'order-complete'}).catch(() => router.push('/order/complete'))
 }
 
 const storageRefreshHandler = () => refreshDraft()
@@ -151,7 +233,7 @@ onBeforeUnmount(() => {
 
 <template>
   <PageContainer>
-    <PageHeader eyebrow="DESKIT" title="주문/결제" />
+    <PageHeader eyebrow="DESKIT" title="주문/결제"/>
 
     <div class="checkout-steps">
       <span class="checkout-step">01 장바구니</span>
@@ -167,99 +249,162 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-else class="checkout-layout">
-      <section class="panel panel--form">
-        <template v-if="step === 'shipping'">
-          <div class="panel__header">
-            <div>
-              <p class="eyebrow">배송 정보</p>
-              <h3 class="panel__title">배송지 정보를 입력해주세요.</h3>
-            </div>
-          </div>
-
-          <div class="form">
-            <div class="field">
-              <label for="buyerName">주문자 이름</label>
-              <input
-                id="buyerName"
-                type="text"
-                :value="form.buyerName"
-                placeholder="한글 6글자 이내"
-                maxlength="6"
-                @input="persistField('buyerName', ($event.target as HTMLInputElement).value)"
-                @blur="validate"
-              />
-              <p v-if="errors.buyerName" class="error">{{ errors.buyerName }}</p>
+      <div v-if="step === 'shipping'" class="left-col">
+        <div class="left-stack">
+          <section class="panel panel--form">
+            <div class="panel__header">
+              <div>
+                <p class="eyebrow">배송 정보</p>
+                <h3 class="panel__title">배송지 정보를 입력해주세요.</h3>
+              </div>
             </div>
 
-            <div class="field">
-              <label for="zipcode">우편번호</label>
-              <input
-                id="zipcode"
-                type="text"
-                :value="form.zipcode"
-                placeholder="12345"
-                maxlength="5"
-                inputmode="numeric"
-                pattern="\\d{5}"
-                @input="persistField('zipcode', ($event.target as HTMLInputElement).value)"
-                @blur="validate"
-              />
-              <p v-if="errors.zipcode" class="error">{{ errors.zipcode }}</p>
+            <div class="form">
+              <div class="field">
+                <label for="buyerName">주문자 이름</label>
+                <input
+                    id="buyerName"
+                    type="text"
+                    :value="form.buyerName"
+                    placeholder="한글 6글자 이내"
+                    maxlength="6"
+                    @input="persistField('buyerName', ($event.target as HTMLInputElement).value)"
+                    @blur="validate"
+                />
+                <p v-if="errors.buyerName" class="error">{{ errors.buyerName }}</p>
+              </div>
+
+              <div class="field">
+                <label for="zipcode">우편번호</label>
+                <input
+                    id="zipcode"
+                    type="text"
+                    :value="form.zipcode"
+                    placeholder="12345"
+                    maxlength="5"
+                    inputmode="numeric"
+                    pattern="\\d{5}"
+                    @input="persistField('zipcode', ($event.target as HTMLInputElement).value)"
+                    @blur="validate"
+                />
+                <p v-if="errors.zipcode" class="error">{{ errors.zipcode }}</p>
+              </div>
+
+              <div class="field">
+                <label for="address1">주소</label>
+                <input
+                    id="address1"
+                    type="text"
+                    :value="form.address1"
+                    placeholder="서울시 강남구 강남대로 123"
+                    @input="persistField('address1', ($event.target as HTMLInputElement).value)"
+                    @blur="validate"
+                />
+                <p v-if="errors.address1" class="error">{{ errors.address1 }}</p>
+              </div>
+
+              <div class="field">
+                <label for="address2">상세주소</label>
+                <input
+                    id="address2"
+                    type="text"
+                    :value="form.address2"
+                    placeholder="아파트 101호"
+                    @input="persistField('address2', ($event.target as HTMLInputElement).value)"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section class="panel panel--form">
+            <div class="panel__header">
+              <div>
+                <p class="eyebrow">결제 수단</p>
+                <h3 class="panel__title">결제 방법을 선택해주세요.</h3>
+              </div>
             </div>
 
-            <div class="field">
-              <label for="address1">주소</label>
-              <input
-                id="address1"
-                type="text"
-                :value="form.address1"
-                placeholder="서울시 강남구 강남대로 123"
-                @input="persistField('address1', ($event.target as HTMLInputElement).value)"
-                @blur="validate"
-              />
-              <p v-if="errors.address1" class="error">{{ errors.address1 }}</p>
+            <div class="payment-options">
+              <label
+                  class="payment-option"
+                  :class="{ 'payment-option--active': paymentMethod === 'CARD' }"
+              >
+                <input
+                    type="radio"
+                    name="payment"
+                    value="CARD"
+                    :checked="paymentMethod === 'CARD'"
+                    @change="persistPayment('CARD')"
+                />
+                <div>
+                  <p class="option-title">신용카드</p>
+                  <p class="option-desc">일반 카드 결제</p>
+                </div>
+              </label>
+              <label
+                  class="payment-option"
+                  :class="{ 'payment-option--active': paymentMethod === 'EASY_PAY' }"
+              >
+                <input
+                    type="radio"
+                    name="payment"
+                    value="EASY_PAY"
+                    :checked="paymentMethod === 'EASY_PAY'"
+                    @change="persistPayment('EASY_PAY')"
+                />
+                <div>
+                  <p class="option-title">간편결제</p>
+                  <p class="option-desc">간편 결제 서비스</p>
+                </div>
+              </label>
+              <label
+                  class="payment-option"
+                  :class="{ 'payment-option--active': paymentMethod === 'TRANSFER' }"
+              >
+                <input
+                    type="radio"
+                    name="payment"
+                    value="TRANSFER"
+                    :checked="paymentMethod === 'TRANSFER'"
+                    @change="persistPayment('TRANSFER')"
+                />
+                <div>
+                  <p class="option-title">계좌이체</p>
+                  <p class="option-desc">무통장/계좌이체</p>
+                </div>
+              </label>
             </div>
+          </section>
+        </div>
 
-            <div class="field">
-              <label for="address2">상세주소</label>
-              <input
-                id="address2"
-                type="text"
-                :value="form.address2"
-                placeholder="아파트 101호"
-                @input="persistField('address2', ($event.target as HTMLInputElement).value)"
-              />
-            </div>
-          </div>
+        <div class="actions actions--left">
+          <button type="button" class="btn ghost" @click="handleBack">뒤로가기</button>
+          <button type="button" class="btn primary" :disabled="!canProceed" @click="handleNext">
+            다음
+          </button>
+        </div>
+      </div>
 
-          <div class="actions">
-            <button type="button" class="btn ghost" @click="handleBack">뒤로가기</button>
-            <button type="button" class="btn primary" :disabled="!canProceed" @click="handleNext">
-              다음
-            </button>
+      <section v-else class="panel panel--form">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">결제 방법</p>
+            <h3 class="panel__title">결제 영역은 토스페이 API 연동 후 구성됩니다.</h3>
           </div>
-        </template>
+        </div>
 
-        <template v-else>
-          <div class="panel__header">
-            <div>
-              <p class="eyebrow">결제 방법</p>
-              <h3 class="panel__title">결제 영역은 토스페이 API 연동 후 구성됩니다.</h3>
-            </div>
-          </div>
+        <div class="payment-placeholder">
+          <p>결제 영역은 토스페이 API 연동 후 구성됩니다.</p>
+        </div>
 
-          <div class="payment-placeholder">
-            <p>결제 영역은 토스페이 API 연동 후 구성됩니다.</p>
-          </div>
-
-          <div class="actions">
-            <button type="button" class="btn ghost" @click="goShipping">뒤로가기</button>
-            <button type="button" class="btn primary" disabled>다음</button>
-          </div>
-        </template>
+        <div class="actions">
+          <button type="button" class="btn ghost" @click="goShipping">뒤로가기</button>
+          <button type="button" class="btn primary" @click="handlePaymentComplete">결제 완료</button>
+        </div>
       </section>
 
       <aside class="panel panel--summary">
+
         <h3 class="panel__title">주문 예상 금액</h3>
         <p class="summary-meta-text">총 {{ items.length }}종 / {{ totalQuantity }}개</p>
 
@@ -350,6 +495,17 @@ onBeforeUnmount(() => {
   border-radius: 16px;
   padding: 16px;
   box-sizing: border-box;
+}
+
+.left-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.left-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .panel__header {
@@ -451,6 +607,48 @@ onBeforeUnmount(() => {
   margin-top: 10px;
 }
 
+.payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.payment-option {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.payment-option:hover {
+  background: var(--surface-weak);
+}
+
+.payment-option--active {
+  border-color: var(--primary-color);
+  background: var(--hover-bg, var(--surface-weak));
+}
+
+.payment-option input {
+  margin: 0;
+}
+
+.option-title {
+  margin: 0;
+  font-weight: 800;
+}
+
+.option-desc {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
 .panel--summary {
   position: sticky;
   top: 80px;
@@ -509,6 +707,10 @@ onBeforeUnmount(() => {
   .panel--summary {
     position: static;
     order: -1;
+  }
+
+  .actions--left {
+    justify-content: flex-start;
   }
 }
 </style>

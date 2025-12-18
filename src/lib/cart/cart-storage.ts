@@ -143,3 +143,12 @@ export const setAllSelected = (selected: boolean): StoredCartItem[] => {
   saveCart(updated)
   return updated
 }
+
+export const removeCartItemsByProductIds = (productIds: string[]): StoredCartItem[] => {
+  if (!Array.isArray(productIds) || productIds.length === 0) return loadCart()
+  const set = new Set(productIds.map((id) => String(id)))
+  const updated = loadCart().filter((item) => !set.has(item.productId))
+  saveCart(updated)
+  window.dispatchEvent(new CustomEvent('deskit-cart-updated'))
+  return updated
+}

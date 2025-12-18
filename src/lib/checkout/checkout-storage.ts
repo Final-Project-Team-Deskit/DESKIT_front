@@ -20,7 +20,7 @@ export type ShippingInfo = {
   address2: string
 }
 
-export type PaymentMethod = 'CARD' | 'TRANSFER'
+export type PaymentMethod = 'CARD' | 'EASY_PAY' | 'TRANSFER'
 
 export type CheckoutDraft = {
   source: 'CART' | 'BUY_NOW'
@@ -79,7 +79,11 @@ const normalizeDraft = (raw: any): CheckoutDraft | null => {
   if (items.length === 0) return null
   const source = raw.source === 'BUY_NOW' ? 'BUY_NOW' : 'CART'
   const paymentMethod: PaymentMethod | null =
-    raw.paymentMethod === 'CARD' || raw.paymentMethod === 'TRANSFER' ? raw.paymentMethod : null
+    raw.paymentMethod === 'CARD' ||
+    raw.paymentMethod === 'EASY_PAY' ||
+    raw.paymentMethod === 'TRANSFER'
+      ? raw.paymentMethod
+      : null
   const shipping = normalizeShipping(raw.shipping)
   return {
     source,
@@ -128,6 +132,14 @@ export const updateShipping = (patch: Partial<ShippingInfo>): CheckoutDraft | nu
     ...current.shipping,
     ...nextPatch,
   }
+  saveCheckout(current)
+  return current
+}
+
+export const updatePaymentMethod = (method: PaymentMethod | null): CheckoutDraft | null => {
+  const current = loadCheckout()
+  if (!current) return null
+  current.paymentMethod = method
   saveCheckout(current)
   return current
 }

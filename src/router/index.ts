@@ -47,6 +47,16 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../pages/Cart.vue'),
   },
   {
+    path: '/order/complete',
+    name: 'order-complete',
+    component: () => import('../pages/OrderComplete.vue'),
+  },
+  {
+    path: '/order/complete',
+    name: 'order-complete',
+    component: () => import('../pages/OrderComplete.vue'),
+  },
+  {
     path: '/checkout',
     name: 'checkout',
     component: () => import('../pages/Checkout.vue'),
