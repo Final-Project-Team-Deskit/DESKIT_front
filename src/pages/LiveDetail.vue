@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import PageContainer from '../components/PageContainer.vue'
 import PageHeader from '../components/PageHeader.vue'
 import { allLiveItems } from '../lib/home-data'
-import { getLiveStatus } from '../lib/live/utils'
+import { getLiveStatus, parseLiveDate } from '../lib/live/utils'
 import { useNow } from '../lib/live/useNow'
 import { getProductsForLive, type LiveProductItem } from '../lib/live/detail'
 
@@ -45,7 +45,7 @@ const scheduledLabel = computed(() => {
   if (!liveItem.value) {
     return ''
   }
-  const start = new Date(liveItem.value.startAt)
+  const start = parseLiveDate(liveItem.value.startAt)
   const dayNames = ['일', '월', '화', '수', '목', '금', '토']
   const month = String(start.getMonth() + 1).padStart(2, '0')
   const date = String(start.getDate()).padStart(2, '0')
@@ -85,6 +85,17 @@ const toggleLike = () => {
 const isSettingsOpen = ref(false)
 const settingsButtonRef = ref<HTMLElement | null>(null)
 const settingsPanelRef = ref<HTMLElement | null>(null)
+const playerPanelRef = ref<HTMLElement | null>(null)
+const chatPanelRef = ref<HTMLElement | null>(null)
+const playerHeight = ref<number | null>(null)
+let panelResizeObserver: ResizeObserver | null = null
+
+const syncChatHeight = () => {
+  if (!playerPanelRef.value) {
+    return
+  }
+  playerHeight.value = playerPanelRef.value.getBoundingClientRect().height
+}
 
 const toggleSettings = () => {
   isSettingsOpen.value = !isSettingsOpen.value
@@ -164,6 +175,18 @@ onMounted(() => {
   scrollToBottom()
 })
 
+onMounted(() => {
+  panelResizeObserver = new ResizeObserver(() => {
+    syncChatHeight()
+  })
+  if (playerPanelRef.value) {
+    panelResizeObserver.observe(playerPanelRef.value)
+  }
+  nextTick(() => {
+    syncChatHeight()
+  })
+})
+
 const handleDocumentClick = (event: MouseEvent) => {
   if (!isSettingsOpen.value) {
     return
@@ -195,6 +218,10 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick)
   document.removeEventListener('keydown', handleDocumentKeydown)
+  if (panelResizeObserver && playerPanelRef.value) {
+    panelResizeObserver.unobserve(playerPanelRef.value)
+  }
+  panelResizeObserver?.disconnect()
 })
 </script>
 
@@ -207,32 +234,9 @@ onBeforeUnmount(() => {
       <RouterLink to="/live" class="link-back">라이브 일정으로 돌아가기</RouterLink>
     </div>
 
-    <section v-else class="live-detail-grid">
-      <aside class="panel panel--products">
-        <div class="panel__header">
-          <h3 class="panel__title">라이브 상품</h3>
-          <span class="panel__count">{{ products.length }}개</span>
-        </div>
-        <div v-if="!products.length" class="panel__empty">등록된 상품이 없습니다.</div>
-        <div v-else class="product-list">
-          <button
-            v-for="product in products"
-            :key="product.id"
-            type="button"
-            class="product-card"
-            @click="handleProductClick(product.id)"
-          >
-            <img class="product-card__thumb" :src="product.imageUrl" :alt="product.name" />
-            <div class="product-card__info">
-              <p class="product-card__name">{{ product.name }}</p>
-              <p class="product-card__price">{{ formatPrice(product.price) }}</p>
-              <span v-if="product.isSoldOut" class="product-card__badge">품절</span>
-            </div>
-          </button>
-        </div>
-      </aside>
-
-      <section class="panel panel--player">
+    <section v-else class="live-detail-layout">
+      <div class="live-detail-main">
+        <section ref="playerPanelRef" class="panel panel--player">
         <div class="player-meta">
           <div class="status-row">
             <span class="status-badge" :class="`status-badge--${status?.toLowerCase()}`">
@@ -260,14 +264,14 @@ onBeforeUnmount(() => {
               type="button"
               class="toolbar-btn"
               :class="{ 'toolbar-btn--active': isLiked }"
-              :aria-label="isLiked ? '좋아요 취소' : '좋아요'"
+              :aria-label="isLiked ? '좋아요' : '좋아요'"
               @click="toggleLike"
             >
               <svg class="toolbar-svg" viewBox="0 0 24 24" aria-hidden="true">
                 <path v-if="isLiked" d="M12.1 21.35l-1.1-1.02C5.14 15.24 2 12.39 2 8.99 2 6.42 4.02 4.5 6.58 4.5c1.54 0 3.04.74 3.92 1.91C11.38 5.24 12.88 4.5 14.42 4.5 16.98 4.5 19 6.42 19 8.99c0 3.4-3.14 6.25-8.9 11.34l-1.1 1.02z" fill="currentColor" />
                 <path v-else d="M12.1 21.35l-1.1-1.02C5.14 15.24 2 12.39 2 8.99 2 6.42 4.02 4.5 6.58 4.5c1.54 0 3.04.74 3.92 1.91C11.38 5.24 12.88 4.5 14.42 4.5 16.98 4.5 19 6.42 19 8.99c0 3.4-3.14 6.25-8.9 11.34l-1.1 1.02z" fill="none" stroke="currentColor" stroke-width="1.8" />
               </svg>
-              <span class="toolbar-label">{{ isLiked ? '좋아요 취소' : '좋아요' }}</span>
+              <span class="toolbar-label">{{ isLiked ? '좋아요' : '좋아요' }}</span>
             </button>
           </div>
           <div class="player-toolbar__group player-toolbar__group--right">
@@ -329,46 +333,81 @@ onBeforeUnmount(() => {
         <button v-if="status === 'ENDED'" type="button" class="vod-btn" @click="handleVod">
           VOD 다시보기
         </button>
-      </section>
+        </section>
 
-      <aside class="panel panel--chat">
-        <div class="panel__header">
-          <h3 class="panel__title">실시간 채팅</h3>
-        </div>
-        <div ref="chatListRef" class="chat-list">
-          <div
-            v-for="message in messages"
-            :key="message.id"
-            class="chat-message"
-            :class="{ 'chat-message--system': message.kind === 'system' }"
-          >
-            <span class="chat-message__user">{{ message.user }}</span>
-            <p class="chat-message__text">{{ message.text }}</p>
-            <span class="chat-message__time">{{ formatChatTime(message.at) }}</span>
+        <aside
+          ref="chatPanelRef"
+          class="panel panel--chat"
+          :style="{ height: playerHeight ? `${playerHeight}px` : undefined }"
+        >
+          <div class="panel__header">
+            <h3 class="panel__title">실시간 채팅</h3>
           </div>
+          <div ref="chatListRef" class="chat-list">
+            <div
+              v-for="message in messages"
+              :key="message.id"
+              class="chat-message"
+              :class="{ 'chat-message--system': message.kind === 'system' }"
+            >
+              <span class="chat-message__user">{{ message.user }}</span>
+              <p class="chat-message__text">{{ message.text }}</p>
+              <span class="chat-message__time">{{ formatChatTime(message.at) }}</span>
+            </div>
+          </div>
+          <div class="chat-input">
+            <input
+              v-model="input"
+              type="text"
+              placeholder="메시지를 입력하세요"
+              :disabled="!isLoggedIn"
+              @keydown.enter="sendMessage"
+            />
+            <button type="button" :disabled="!isLoggedIn || !input.trim()" @click="sendMessage">
+              전송
+            </button>
+          </div>
+          <p v-if="!isLoggedIn" class="chat-helper">로그인 후 이용하실 수 있습니다.</p>
+        </aside>
+      </div>
+
+      <section class="panel panel--products">
+        <div class="panel__header">
+          <h3 class="panel__title">라이브 상품</h3>
+          <span class="panel__count">{{ products.length }}개</span>
         </div>
-        <div class="chat-input">
-          <input
-            v-model="input"
-            type="text"
-            placeholder="메시지를 입력하세요"
-            :disabled="!isLoggedIn"
-            @keydown.enter="sendMessage"
-          />
-          <button type="button" :disabled="!isLoggedIn || !input.trim()" @click="sendMessage">
-            전송
+        <div v-if="!products.length" class="panel__empty">등록된 상품이 없습니다.</div>
+        <div v-else class="product-list product-list--grid">
+          <button
+            v-for="product in products"
+            :key="product.id"
+            type="button"
+            class="product-card"
+            @click="handleProductClick(product.id)"
+          >
+            <img class="product-card__thumb" :src="product.imageUrl" :alt="product.name" />
+            <div class="product-card__info">
+              <p class="product-card__name">{{ product.name }}</p>
+              <p class="product-card__price">{{ formatPrice(product.price) }}</p>
+              <span v-if="product.isSoldOut" class="product-card__badge">품절</span>
+            </div>
           </button>
         </div>
-        <p v-if="!isLoggedIn" class="chat-helper">로그인 후 이용하실 수 있습니다.</p>
-      </aside>
+      </section>
     </section>
   </PageContainer>
 </template>
 
 <style scoped>
-.live-detail-grid {
+.live-detail-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.live-detail-main {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   gap: 18px;
   align-items: start;
 }
@@ -407,22 +446,8 @@ onBeforeUnmount(() => {
   padding: 10px 0;
 }
 
-.panel--products,
-.panel--chat {
-  max-height: clamp(360px, 70vh, 720px);
-  overflow: hidden;
-}
-
 .panel--products {
   overflow: hidden;
-}
-
-.product-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  overflow-y: auto;
-  padding-right: 4px;
 }
 
 .product-card {
@@ -474,6 +499,11 @@ onBeforeUnmount(() => {
 
 .panel--player {
   gap: 16px;
+}
+
+.panel--chat {
+  gap: 12px;
+  min-height: 0;
 }
 
 .player-meta {
@@ -691,12 +721,9 @@ onBeforeUnmount(() => {
   align-self: flex-start;
 }
 
-.panel--chat {
-  gap: 12px;
-}
-
 .chat-list {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -782,24 +809,21 @@ onBeforeUnmount(() => {
   color: var(--primary-color);
 }
 
-@media (max-width: 1080px) {
-  .live-detail-grid {
-    grid-template-columns: 1fr;
-  }
+.product-list--grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
 
-  .panel--products,
-  .panel--chat {
-    max-height: none;
+@media (max-width: 1080px) {
+  .live-detail-main {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 640px) {
-  .live-detail-grid {
+  .live-detail-main {
     gap: 14px;
-  }
-
-  .panel {
-    padding: 14px;
   }
 
   .player-toolbar {

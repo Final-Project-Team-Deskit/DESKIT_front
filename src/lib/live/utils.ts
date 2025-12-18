@@ -2,9 +2,39 @@ import type { LiveItem } from './types'
 
 export type LiveStatus = 'UPCOMING' | 'LIVE' | 'ENDED'
 
+export const parseLiveDate = (value: string): Date => {
+  if (!value) {
+    return new Date(NaN)
+  }
+
+  const hasTimezone = /([zZ]|[+-]\d{2}:?\d{2})$/.test(value)
+  if (hasTimezone) {
+    return new Date(value)
+  }
+
+  const [datePart, timePart] = value.includes('T') ? value.split('T') : value.split(' ')
+  if (!datePart) {
+    return new Date(value)
+  }
+
+  const [year, month, day] = datePart.split('-').map((part) => Number(part))
+  if ([year, month, day].some((part) => Number.isNaN(part))) {
+    return new Date(value)
+  }
+
+  const timePieces = (timePart ?? '').split(':')
+  const hours = Number(timePieces[0] ?? 0) || 0
+  const minutes = Number(timePieces[1] ?? 0) || 0
+  const [secPart = '0', msPart = '0'] = (timePieces[2] ?? '0').split('.')
+  const seconds = Number(secPart) || 0
+  const milliseconds = Number(msPart) || 0
+
+  return new Date(year, (month ?? 1) - 1, day ?? 1, hours, minutes, seconds, milliseconds)
+}
+
 export const getLiveStatus = (item: LiveItem, now: Date = new Date()): LiveStatus => {
-  const startAt = new Date(item.startAt)
-  const endAt = new Date(item.endAt)
+  const startAt = parseLiveDate(item.startAt)
+  const endAt = parseLiveDate(item.endAt)
 
   if (now < startAt) {
     return 'UPCOMING'
@@ -35,9 +65,11 @@ export const isSameLocalDay = (a: Date, b: Date): boolean => {
 }
 
 export const sortLivesByStartAt = (items: LiveItem[]): LiveItem[] => {
-  return [...items].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+  return [...items].sort(
+    (a, b) => parseLiveDate(a.startAt).getTime() - parseLiveDate(b.startAt).getTime(),
+  )
 }
 
 export const filterLivesByDay = (items: LiveItem[], day: Date): LiveItem[] => {
-  return items.filter((item) => isSameLocalDay(new Date(item.startAt), day))
+  return items.filter((item) => isSameLocalDay(parseLiveDate(item.startAt), day))
 }

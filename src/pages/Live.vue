@@ -4,7 +4,13 @@ import { useRouter } from 'vue-router'
 import PageContainer from '../components/PageContainer.vue'
 import PageHeader from '../components/PageHeader.vue'
 import { liveItems } from '../lib/live/data'
-import { filterLivesByDay, getDayWindow, getLiveStatus, sortLivesByStartAt } from '../lib/live/utils'
+import {
+  filterLivesByDay,
+  getDayWindow,
+  getLiveStatus,
+  parseLiveDate,
+  sortLivesByStartAt,
+} from '../lib/live/utils'
 import type { LiveItem } from '../lib/live/types'
 import { useNow } from '../lib/live/useNow'
 
@@ -22,7 +28,7 @@ const dayWindow = computed(() => getDayWindow(today))
 const selectedDay = ref(normalizeDay(dayWindow.value[3]))
 
 const formatTime = (value: string) => {
-  const time = new Date(value)
+  const time = parseLiveDate(value)
   const hours = time.getHours().toString().padStart(2, '0')
   const minutes = time.getMinutes().toString().padStart(2, '0')
   return `${hours}:${minutes}`
@@ -33,10 +39,25 @@ const getCountdownLabel = (item: LiveItem) => {
   if (getStatus(item) !== 'UPCOMING') {
     return ''
   }
-  const diffMs = new Date(item.startAt).getTime() - now.value.getTime()
+  const start = parseLiveDate(item.startAt)
+  const nowValue = now.value
+  const diffMs = start.getTime() - nowValue.getTime()
   if (diffMs <= 0) {
     return '시작 예정'
   }
+
+  const dayMs = 86400000
+  const startDay = normalizeDay(start)
+  const nowDay = normalizeDay(nowValue)
+  const dayDiff = Math.floor((startDay.getTime() - nowDay.getTime()) / dayMs)
+
+  if (dayDiff >= 2) {
+    return `${dayDiff}일 후 시작`
+  }
+  if (dayDiff === 1) {
+    return '내일 시작'
+  }
+
   const minutes = Math.floor(diffMs / 60000)
   if (minutes < 1) {
     return '곧 시작'
@@ -45,12 +66,8 @@ const getCountdownLabel = (item: LiveItem) => {
     return `${minutes}분 후 시작`
   }
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) {
-    const remaining = minutes % 60
-    return remaining === 0 ? `${hours}시간 후 시작` : `${hours}시간 ${remaining}분 후 시작`
-  }
-  const days = Math.ceil(diffMs / 86400000)
-  return `${days}일 후 시작`
+  const remaining = minutes % 60
+  return remaining === 0 ? `${hours}시간 후 시작` : `${hours}시간 ${remaining}분 후 시작`
 }
 
 const itemsForDay = computed(() => {
@@ -88,8 +105,8 @@ const groupedByTime = computed(() => {
     const next = [...items].sort((a, b) => {
       const weight = statusWeight(a) - statusWeight(b)
       if (weight !== 0) return weight
-      const ta = new Date(a.startAt).getTime()
-      const tb = new Date(b.startAt).getTime()
+      const ta = parseLiveDate(a.startAt).getTime()
+      const tb = parseLiveDate(b.startAt).getTime()
       if (ta !== tb) return ta - tb
       return a.id.localeCompare(b.id)
     })
@@ -299,17 +316,43 @@ onBeforeUnmount(() => {
   padding: 6px 2px 18px;
 }
 
+.date-strip {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+
+  /* ✅ 가운데 정렬 */
+  justify-content: center;
+
+  /* ✅ 줄바꿈 허용해서 "10일"이 한 줄로 안 들어가면 자연스럽게 다음 줄로 */
+  flex-wrap: wrap;
+
+  padding: 6px 2px 18px;
+  margin: 0 auto 18px;
+}
+
 .date-pill {
   border: 1px solid var(--border-color);
   background: var(--surface);
   border-radius: 12px;
   padding: 10px 12px;
   min-width: 76px;
+
   display: grid;
   gap: 4px;
   text-align: center;
   cursor: pointer;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+
+  flex: 0 0 auto;
+}
+
+@media (max-width: 840px) {
+  .date-strip {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
 }
 
 .date-pill__label {

@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { LiveItem } from '../lib/live/types'
-import { getLiveStatus } from '../lib/live/utils'
+import { getLiveStatus, parseLiveDate } from '../lib/live/utils'
 import { useNow } from '../lib/live/useNow'
 
 const props = defineProps<{
@@ -12,7 +12,7 @@ const props = defineProps<{
 
 const { now } = useNow(1000)
 const elapsed = computed(() => {
-  const started = new Date(props.item.startAt)
+  const started = parseLiveDate(props.item.startAt)
   const diffMs = now.value.getTime() - started.getTime()
   const hours = Math.floor(diffMs / (1000 * 60 * 60))
   const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
@@ -37,7 +37,7 @@ const buttonLabel = computed(() => {
 })
 
 const scheduledLabel = computed(() => {
-  const start = new Date(props.item.startAt)
+  const start = parseLiveDate(props.item.startAt)
   const dayNames = ['일', '월', '화', '수', '목', '금', '토']
   const month = String(start.getMonth() + 1).padStart(2, '0')
   const date = String(start.getDate()).padStart(2, '0')

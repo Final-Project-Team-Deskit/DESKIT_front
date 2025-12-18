@@ -1,5 +1,5 @@
 import { liveItems as allLiveItems } from './live/data'
-import { getLiveStatus } from './live/utils'
+import { getLiveStatus, parseLiveDate } from './live/utils'
 import type { LiveItem } from './live/types'
 import type { ProductTags } from './products-data'
 import { productsData } from './products-data'
@@ -45,7 +45,7 @@ export const liveItems: LiveItem[] = allLiveItems
       return true
     }
     if (status === 'UPCOMING') {
-      const startAt = new Date(item.startAt).getTime()
+      const startAt = parseLiveDate(item.startAt).getTime()
       return startAt >= todayStart.getTime() && startAt <= windowEnd.getTime()
     }
     return false
@@ -58,7 +58,7 @@ export const liveItems: LiveItem[] = allLiveItems
       return statusA === 'LIVE' ? -1 : 1
     }
 
-    return new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
+    return parseLiveDate(a.startAt).getTime() - parseLiveDate(b.startAt).getTime()
   })
   .slice(0, 8)
 
