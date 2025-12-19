@@ -7,12 +7,11 @@ const props = defineProps<{
   subtitle?: string
   eyebrow?: string
   showHeader?: boolean
-  maxWidth?: number
 }>()
 </script>
 
 <template>
-  <PageContainer :max-width="props.maxWidth">
+  <PageContainer>
     <PageHeader
       :title="props.title"
       :subtitle="props.subtitle"

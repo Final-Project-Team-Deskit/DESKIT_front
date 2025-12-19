@@ -202,7 +202,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <PageContainer :max-width="1200">
+  <PageContainer>
     <RouterLink to="/products" class="back">← 상품 목록으로</RouterLink>
 
     <div v-if="product" class="card">
@@ -269,11 +269,9 @@ onBeforeUnmount(() => {
     </div>
 
     <section v-if="product?.detailHtml" class="detail-html">
-      <div class="page__inner">
-        <h2 class="detail-html__title">상세 설명</h2>
-        <!-- NOTE: Ensure HTML is sanitized before rendering in production -->
-        <div class="detail-html__content" v-html="product.detailHtml" />
-      </div>
+      <h2 class="detail-html__title">상세 설명</h2>
+      <!-- NOTE: Ensure HTML is sanitized before rendering in production -->
+      <div class="detail-html__content" v-html="product.detailHtml" />
     </section>
 
     <!-- ✅ Add-to-cart modal -->

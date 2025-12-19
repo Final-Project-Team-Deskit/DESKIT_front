@@ -10,7 +10,7 @@ import PageContainer from '../components/PageContainer.vue'
   <div class="home">
     <!-- Hero: full-bleed (NOT inside PageContainer) -->
     <section class="hero">
-      <div class="hero__inner">
+      <div class="hero__inner ds-container">
         <p class="hero__eyebrow">DESKIT</p>
         <h1 class="hero__title">나만의 데스크를 완성하는 방법</h1>
         <p class="hero__lede">라이브 · 셋업 · 아이템을 한 번에 둘러보세요.</p>
@@ -20,27 +20,27 @@ import PageContainer from '../components/PageContainer.vue'
 
     <!-- Content: standardized 1200 layout -->
     <PageContainer>
-      <div class="stack">
+      <div class="ds-stack-lg">
         <section>
-          <div class="section-head">
+          <div class="ds-section-head">
             <h2 class="section-title">라이브 방송</h2>
-            <p class="section-sub">지금 진행 중인 라이브를 만나보세요.</p>
+            <p class="ds-section-sub">지금 진행 중인 라이브를 만나보세요.</p>
           </div>
           <LiveCarousel :items="liveItems" />
         </section>
 
         <section>
-          <div class="section-head">
+          <div class="ds-section-head">
             <h2 class="section-title">인기 셋업</h2>
-            <p class="section-sub">다양한 스타일의 데스크 셋업을 둘러보세요.</p>
+            <p class="ds-section-sub">다양한 스타일의 데스크 셋업을 둘러보세요.</p>
           </div>
           <SetupCarousel :items="popularSetups" />
         </section>
 
         <section>
-          <div class="section-head">
+          <div class="ds-section-head">
             <h2 class="section-title">인기 상품</h2>
-            <p class="section-sub">데스크 완성을 위한 추천 아이템.</p>
+            <p class="ds-section-sub">데스크 완성을 위한 추천 아이템.</p>
           </div>
           <ProductCarousel :items="popularProducts" />
         </section>
@@ -55,43 +55,40 @@ import PageContainer from '../components/PageContainer.vue'
   flex-direction: column;
 }
 
-/* Full-bleed hero */
+/* Full-bleed hero (premium gradient + more breathing room) */
 .hero {
   position: relative;
   overflow: hidden;
-  padding: 34px 0 26px;
+  padding: 56px 0 44px;
   margin-bottom: 8px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-  background: linear-gradient(
-      135deg,
-      rgba(17, 24, 39, 0.06),
-      rgba(34, 197, 94, 0.06)
-  );
+  background:
+    radial-gradient(1200px 520px at 20% -20%, rgba(34, 197, 94, 0.18), transparent 60%),
+    radial-gradient(900px 420px at 110% 10%, rgba(17, 24, 39, 0.10), transparent 55%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.75), rgba(248, 249, 245, 0.85));
 }
 
 .hero::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.55);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.68));
 }
 
 .hero__inner {
   position: relative;
   z-index: 1;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
 }
 
 .hero__glow {
   position: absolute;
-  width: 520px;
-  height: 520px;
-  right: -180px;
-  top: -260px;
-  background: radial-gradient(circle, rgba(34, 197, 94, 0.14), transparent 60%);
-  opacity: 0.7;
+  width: 640px;
+  height: 640px;
+  right: -220px;
+  top: -320px;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.16), transparent 62%);
+  opacity: 0.65;
+  filter: blur(2px);
   pointer-events: none;
 }
 
@@ -118,32 +115,11 @@ import PageContainer from '../components/PageContainer.vue'
   font-weight: 700;
 }
 
-/* Content */
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 34px;
-}
-
-.section-head {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.section-sub {
-  margin: 0;
-  color: var(--text-muted);
-}
-
 @media (max-width: 640px) {
-  .hero__inner {
-    padding: 0 16px;
-  }
   .hero {
-    padding: 28px 0 20px;
+    padding: 44px 0 34px;
   }
+
   .hero__title {
     font-size: 22px;
   }

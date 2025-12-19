@@ -1,16 +1,6 @@
-<script setup lang="ts">
-import { computed } from 'vue'
-
-const props = defineProps<{
-  maxWidth?: number
-}>()
-
-const max = computed(() => `${props.maxWidth ?? 1200}px`)
-</script>
-
 <template>
   <main class="page">
-    <div class="page__inner" :style="{ '--max': max }">
+    <div class="page__inner">
       <slot />
     </div>
   </main>
@@ -22,8 +12,7 @@ const max = computed(() => `${props.maxWidth ?? 1200}px`)
 }
 
 .page__inner {
-  --max: 1200px;
-  max-width: var(--max, 1200px);
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
   box-sizing: border-box;

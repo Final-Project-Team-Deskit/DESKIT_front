@@ -24,7 +24,7 @@ const setupProducts = computed<UiProduct[]>(() => {
 </script>
 
 <template>
-  <PageContainer :max-width="1200">
+  <PageContainer>
     <RouterLink to="/setup" class="back">← 셋업 목록</RouterLink>
 
     <div v-if="setup" class="layout">
