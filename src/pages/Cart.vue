@@ -274,7 +274,6 @@ onBeforeUnmount(() => {
   padding: 14px 16px;
 }
 
-/* ✅ 체크박스: 행 높이 기준 중앙 고정 */
 .cart-item__select {
   display: grid;
   place-items: center;
@@ -466,7 +465,6 @@ onBeforeUnmount(() => {
   cursor: not-allowed;
 }
 
-/* ✅ input 숨기고 fake 체크박스만 보이게 (아이템/전체선택 공통) */
 .cart-item__select,
 .select-all {
   position: relative;
@@ -515,7 +513,6 @@ onBeforeUnmount(() => {
   transform: rotate(45deg);
 }
 
-/* (옵션) 포커스도 자연스럽게 */
 .cart-item__select input:focus-visible + .checkbox__fake,
 .select-all input:focus-visible + .checkbox__fake {
   outline: 2px solid rgba(0, 0, 0, 0.12);

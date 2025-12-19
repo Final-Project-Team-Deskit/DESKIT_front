@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import {RouterLink, useRoute, useRouter} from 'vue-router'
+import {isLoggedIn as checkLoggedIn, logout} from '../lib/auth'
 
 const route = useRoute()
 const router = useRouter()
 const isScrolled = ref(false)
 const isMenuOpen = ref(false)
 const panelRef = ref<HTMLElement | null>(null)
-const isAccountOpen = ref(false)
-const accountRef = ref<HTMLElement | null>(null)
+const isLoggedIn = ref(false)
 
 const navLinks = [
   {label: '상품', to: '/products'},
@@ -16,7 +16,21 @@ const navLinks = [
   {label: '라이브', to: '/live'},
 ]
 
-const actionLinks = [{label: '장바구니', to: '/cart', icon: 'cart'}]
+const refreshAuth = () => {
+  isLoggedIn.value = checkLoggedIn()
+}
+
+const actionLinks = computed(() =>
+  isLoggedIn.value
+    ? [
+        {label: '장바구니', to: '/cart', icon: 'cart'},
+        {label: '마이페이지', to: '/my', icon: 'user'},
+      ]
+    : [
+        {label: '장바구니', to: '/cart', icon: 'cart'},
+        {label: '로그인', to: '/login', icon: 'user'},
+      ],
+)
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 8
@@ -25,22 +39,25 @@ const handleScroll = () => {
 const handleDocumentClick = (event: MouseEvent) => {
   const target = event.target as Node
   if (isMenuOpen.value && panelRef.value && panelRef.value.contains(target)) return
-  if (isAccountOpen.value && accountRef.value && accountRef.value.contains(target)) return
   closeMenu()
-  closeAccount()
 }
 
 onMounted(() => {
   handleScroll()
+  refreshAuth()
   window.addEventListener('scroll', handleScroll, {passive: true})
   window.addEventListener('keydown', onKeydown)
   document.addEventListener('click', handleDocumentClick)
+  window.addEventListener('deskit-user-updated', refreshAuth)
+  window.addEventListener('storage', refreshAuth)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('keydown', onKeydown)
   document.removeEventListener('click', handleDocumentClick)
+  window.removeEventListener('deskit-user-updated', refreshAuth)
+  window.removeEventListener('storage', refreshAuth)
 })
 
 const isLiveActive = computed(() => route.path.startsWith('/live'))
@@ -53,18 +70,9 @@ const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
 }
 
-const closeAccount = () => {
-  isAccountOpen.value = false
-}
-
-const toggleAccount = () => {
-  isAccountOpen.value = !isAccountOpen.value
-}
-
 const onKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     closeMenu()
-    closeAccount()
   }
 }
 
@@ -72,7 +80,6 @@ watch(
     () => route.fullPath,
     () => {
       closeMenu()
-      closeAccount()
     },
 )
 
@@ -91,6 +98,11 @@ const submitSearch = () => {
   const q = searchQuery.value.trim()
   router.push({path: '/products', query: q ? {q} : undefined})
   closeMenu()
+}
+
+const handleLogout = () => {
+  logout()
+  router.push('/').catch(() => {})
 }
 </script>
 
@@ -122,7 +134,7 @@ const submitSearch = () => {
         </nav>
       </div>
 
-      <div class="right">
+      <div class="right right-wrap">
         <form class="search search--desktop" @submit.prevent="submitSearch">
           <svg class="search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path
@@ -171,30 +183,14 @@ const submitSearch = () => {
             </svg>
             <span>{{ action.label }}</span>
           </RouterLink>
-          <div class="account" ref="accountRef">
-            <button
-                type="button"
-                class="account-btn"
-                aria-haspopup="menu"
-                :aria-expanded="isAccountOpen"
-                @click.stop="toggleAccount"
-            >
-              마이페이지
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-              </svg>
-            </button>
-            <transition name="fade">
-              <div v-if="isAccountOpen" class="account-menu" role="menu">
-                <RouterLink to="/my" class="account-item" role="menuitem" @click="closeAccount">
-                  마이페이지
-                </RouterLink>
-                <RouterLink to="/my/orders" class="account-item" role="menuitem" @click="closeAccount">
-                  주문내역
-                </RouterLink>
-              </div>
-            </transition>
-          </div>
+          <button
+              v-if="isLoggedIn && actionLinks.some((a) => a.label === '마이페이지')"
+              type="button"
+              class="logout-btn"
+              @click="handleLogout"
+          >
+            로그아웃
+          </button>
           <button
               type="button"
               class="icon-btn menu-btn"
@@ -270,9 +266,25 @@ const submitSearch = () => {
           >
             {{ action.label }}
           </RouterLink>
-          <RouterLink to="/my/orders" class="mobile-menu__link" @click="closeMenu">
+          <RouterLink
+              v-if="isLoggedIn"
+              to="/my/orders"
+              class="mobile-menu__link"
+              @click="closeMenu"
+          >
             주문내역
           </RouterLink>
+          <button
+              v-if="isLoggedIn"
+              type="button"
+              class="mobile-menu__link logout-btn--mobile"
+              @click="
+                handleLogout();
+                closeMenu();
+              "
+          >
+            로그아웃
+          </button>
         </div>
       </div>
     </transition>
@@ -305,53 +317,6 @@ const submitSearch = () => {
 .header--scrolled {
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
   border-color: rgba(15, 23, 42, 0.06);
-}
-
-.account {
-  position: relative;
-}
-
-.account-btn {
-  border: 1px solid var(--border-color);
-  background: var(--surface);
-  border-radius: 12px;
-  padding: 8px 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.account-menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 8px);
-  min-width: 160px;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--surface);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  z-index: 5;
-}
-
-.account-item {
-  padding: 10px 12px;
-  color: var(--text-strong);
-  text-decoration: none;
-  transition: background 0.2s ease;
-}
-
-.account-item:hover {
-  background: var(--surface-weak);
-}
-
-.account-item--disabled {
-  color: var(--text-muted);
-  cursor: not-allowed;
 }
 
 .left {
@@ -462,6 +427,11 @@ const submitSearch = () => {
   min-width: 0;
 }
 
+.right-wrap {
+  margin-right: 24px;
+  max-width: 640px;
+}
+
 .search {
   position: relative;
   width: clamp(260px, 30vw, 360px);
@@ -501,7 +471,7 @@ const submitSearch = () => {
 .actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .action-link {
@@ -509,6 +479,9 @@ const submitSearch = () => {
   border-radius: 10px;
   color: var(--text-muted);
   font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+  line-height: 1;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -519,6 +492,25 @@ const submitSearch = () => {
   color: var(--text-strong);
   background: var(--surface-weak);
   transform: translateY(-1px);
+}
+
+.logout-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 800;
+  font-size: 13px;
+  white-space: nowrap;
+  line-height: 1;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.logout-btn:hover,
+.logout-btn:focus-visible {
+  color: var(--text-strong);
+  text-decoration: underline;
+  outline: none;
 }
 
 .icon-btn {
@@ -602,6 +594,23 @@ const submitSearch = () => {
   flex-direction: column;
   gap: 4px;
   margin-top: 6px;
+}
+
+.logout-btn--mobile {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 800;
+  text-align: left;
+  padding: 12px 10px;
+  border-radius: 10px;
+}
+
+.logout-btn--mobile:hover,
+.logout-btn--mobile:focus-visible {
+  color: var(--text-strong);
+  background: var(--surface-weak);
+  outline: none;
 }
 
 .mobile-menu__link {

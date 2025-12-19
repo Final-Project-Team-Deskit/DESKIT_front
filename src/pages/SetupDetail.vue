@@ -24,7 +24,7 @@ const setupProducts = computed<UiProduct[]>(() => {
 </script>
 
 <template>
-  <PageContainer :max-width="1240">
+  <PageContainer :max-width="1200">
     <RouterLink to="/setup" class="back">← 셋업 목록</RouterLink>
 
     <div v-if="setup" class="layout">
@@ -91,13 +91,6 @@ const setupProducts = computed<UiProduct[]>(() => {
 <style scoped>
 .setup-detail {
   padding: 16px 0 36px;
-}
-
-.page__inner {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 0 24px;
-  box-sizing: border-box;
 }
 
 .layout {

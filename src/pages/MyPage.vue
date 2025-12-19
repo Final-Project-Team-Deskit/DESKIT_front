@@ -4,6 +4,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import PageContainer from '../components/PageContainer.vue'
 import PageHeader from '../components/PageHeader.vue'
 import { productsData } from '../lib/products-data'
+import { getAuthUser, logout } from '../lib/auth'
 
 type UserInfo = {
   name: string
@@ -32,23 +33,18 @@ const seedUser = () => {
 }
 
 const loadUser = () => {
-  const raw = localStorage.getItem('deskit-user')
-  if (!raw) {
+  const parsed = getAuthUser()
+  if (!parsed) {
     seedUser()
     return
   }
-  try {
-    const parsed = JSON.parse(raw) as UserInfo
-    user.value = {
-      name: parsed?.name || SEED_USER.name,
-      email: parsed?.email || SEED_USER.email,
-      signupType: parsed?.signupType || SEED_USER.signupType,
-      memberCategory: parsed?.memberCategory || SEED_USER.memberCategory,
-      mbti: parsed?.mbti || SEED_USER.mbti,
-      job: parsed?.job || SEED_USER.job,
-    }
-  } catch {
-    seedUser()
+  user.value = {
+    name: parsed.name || SEED_USER.name,
+    email: parsed.email || SEED_USER.email,
+    signupType: parsed.signupType || SEED_USER.signupType,
+    memberCategory: parsed.memberCategory || SEED_USER.memberCategory,
+    mbti: parsed.mbti || SEED_USER.mbti,
+    job: parsed.job || SEED_USER.job,
   }
 }
 
@@ -70,8 +66,7 @@ const handleWithdraw = () => {
 }
 
 const handleLogout = () => {
-  ;['deskit-auth', 'token'].forEach((key) => localStorage.removeItem(key))
-  window.dispatchEvent(new Event('deskit-user-updated'))
+  logout()
   router.push('/').catch(() => {})
 }
 

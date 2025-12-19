@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { isLoggedIn } from '../lib/auth'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -52,6 +53,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../pages/Checkout.vue'),
   },
   {
+    path: '/login',
+    name: 'login',
+    component: () => import('../pages/Login.vue'),
+  },
+  {
     path: '/my',
     name: 'my-page',
     component: () => import('../pages/MyPage.vue'),
@@ -84,4 +90,17 @@ export const router = createRouter({
   scrollBehavior() {
     return { top: 0 }
   },
+})
+
+const protectedPaths = ['/my', '/my/orders']
+
+router.beforeEach((to) => {
+  const loggedIn = isLoggedIn()
+  if (!loggedIn && protectedPaths.some((p) => to.path.startsWith(p))) {
+    return { path: '/login', query: { redirect: to.fullPath } }
+  }
+  if (loggedIn && to.path === '/login') {
+    return { path: '/' }
+  }
+  return true
 })
