@@ -4,16 +4,6 @@
   flex-direction: column;
 }
 
-.page {
-  flex: 1;
-  padding: 32px 20px 60px;
-}
-
-.page__inner {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
 .section-title {
   font-size: 1.6rem;
   font-weight: 800;

@@ -1,8 +1,10 @@
+<script setup lang="ts">
+import PageContainer from '../components/PageContainer.vue'
+</script>
+
 <template>
-  <main class="page">
-    <div class="page__inner">
-      <h2 class="section-title">판매자</h2>
-      <p>판매자 페이지가 준비 중입니다.</p>
-    </div>
-  </main>
+  <PageContainer>
+    <h2 class="section-title">판매자</h2>
+    <p>판매자 페이지가 준비 중입니다.</p>
+  </PageContainer>
 </template>
