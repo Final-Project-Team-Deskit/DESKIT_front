@@ -82,6 +82,26 @@ const routes: RouteRecordRaw[] = [
     name: 'seller',
     component: () => import('../pages/Seller.vue'),
   },
+  {
+    path: '/seller/live',
+    name: 'seller-live',
+    component: () => import('../pages/seller/Live.vue'),
+  },
+  {
+    path: '/seller/products',
+    name: 'seller-products',
+    component: () => import('../pages/seller/Products.vue'),
+  },
+  {
+    path: '/seller/inventory',
+    name: 'seller-inventory',
+    component: () => import('../pages/seller/Inventory.vue'),
+  },
+  {
+    path: '/seller/support',
+    name: 'seller-support',
+    component: () => import('../pages/seller/Support.vue'),
+  },
 ]
 
 export const router = createRouter({

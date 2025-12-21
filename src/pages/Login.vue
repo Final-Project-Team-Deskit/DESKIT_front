@@ -35,6 +35,10 @@ const handleLogin = (provider: Provider) => {
   const redirect = (route.query.redirect as string) || '/'
   router.push(redirect).catch(() => {})
 }
+
+const goToSeller = () => {
+  router.push('/seller').catch(() => {})
+}
 </script>
 
 <template>
@@ -96,6 +100,11 @@ const handleLogin = (provider: Provider) => {
               </svg>
             </span>
             <span class="btn-text">구글로 시작하기</span>
+          </button>
+
+          <button type="button" class="social-btn seller" @click="goToSeller">
+            <span class="brand-ico" aria-hidden="true">S</span>
+            <span class="btn-text">판매자 페이지로 이동(임시)</span>
           </button>
         </div>
 
@@ -245,6 +254,17 @@ const handleLogin = (provider: Provider) => {
 
 .social-btn.google .brand-ico {
   background: #f3f4f6;
+}
+
+.social-btn.seller {
+  background: var(--surface);
+  color: var(--text-strong);
+  border-color: var(--border-color);
+}
+
+.social-btn.seller .brand-ico {
+  background: var(--surface-weak);
+  color: var(--text-strong);
 }
 
 .btn-text {

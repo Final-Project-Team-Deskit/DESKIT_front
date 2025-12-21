@@ -16,20 +16,28 @@ const navLinks = [
   {label: '라이브', to: '/live'},
 ]
 
+const sellerTabs = [
+  {label: '대시보드', to: '/seller'},
+  {label: '방송관리', to: '/seller/live'},
+  {label: '상품관리', to: '/seller/products'},
+  {label: '재고관리', to: '/seller/inventory'},
+  {label: '고객센터', to: '/seller/support'},
+]
+
 const refreshAuth = () => {
   isLoggedIn.value = checkLoggedIn()
 }
 
 const actionLinks = computed(() =>
-  isLoggedIn.value
-    ? [
-        {label: '장바구니', to: '/cart', icon: 'cart'},
-        {label: '마이페이지', to: '/my', icon: 'user'},
-      ]
-    : [
-        {label: '장바구니', to: '/cart', icon: 'cart'},
-        {label: '로그인', to: '/login', icon: 'user'},
-      ],
+    isLoggedIn.value
+        ? [
+          {label: '장바구니', to: '/cart', icon: 'cart'},
+          {label: '마이페이지', to: '/my', icon: 'user'},
+        ]
+        : [
+          {label: '장바구니', to: '/cart', icon: 'cart'},
+          {label: '로그인', to: '/login', icon: 'user'},
+        ],
 )
 
 const handleScroll = () => {
@@ -61,6 +69,14 @@ onBeforeUnmount(() => {
 })
 
 const isLiveActive = computed(() => route.path.startsWith('/live'))
+const isSellerRoute = computed(() => route.path.startsWith('/seller'))
+const activeSellerPath = computed(() => {
+  if (route.path === '/seller') return '/seller'
+  const match = sellerTabs.find((tab) => tab.to !== '/seller' && route.path.startsWith(tab.to))
+  return match?.to ?? '/seller'
+})
+
+const logoTo = computed(() => (isSellerRoute.value ? '/seller' : '/'))
 
 const closeMenu = () => {
   isMenuOpen.value = false
@@ -102,7 +118,8 @@ const submitSearch = () => {
 
 const handleLogout = () => {
   logout()
-  router.push('/').catch(() => {})
+  router.push('/').catch(() => {
+  })
 }
 </script>
 
@@ -110,11 +127,11 @@ const handleLogout = () => {
   <header class="header" :class="{ 'header--scrolled': isScrolled }">
     <div class="container">
       <div class="left">
-        <RouterLink to="/" class="brand">
+        <RouterLink :to="logoTo" class="brand">
           <img class="brand__logo" src="/DESKIT.png" alt="DESKIT"/>
         </RouterLink>
 
-        <nav class="nav">
+        <nav v-if="!isSellerRoute" class="nav">
           <RouterLink
               v-for="item in navLinks"
               :key="item.to"
@@ -132,6 +149,20 @@ const handleLogout = () => {
             <span v-if="item.to === '/live'" class="live-pill">LIVE</span>
           </RouterLink>
         </nav>
+        <div v-else class="seller-nav">
+          <nav class="nav seller-tabs" aria-label="판매자 대시보드 탭">
+            <RouterLink
+                v-for="tab in sellerTabs"
+                :key="tab.to"
+                :to="tab.to"
+                class="nav-link"
+                :class="{ 'nav-link--active': activeSellerPath === tab.to }"
+                :aria-current="activeSellerPath === tab.to ? 'page' : undefined"
+            >
+              {{ tab.label }}
+            </RouterLink>
+          </nav>
+        </div>
       </div>
 
       <div class="right right-wrap">
@@ -244,7 +275,7 @@ const handleLogout = () => {
             </svg>
           </button>
         </div>
-        <nav class="mobile-menu__nav">
+        <nav v-if="!isSellerRoute" class="mobile-menu__nav">
           <RouterLink
               v-for="item in navLinks"
               :key="item.to"
@@ -255,6 +286,19 @@ const handleLogout = () => {
             {{ item.label }}
             <span v-if="item.to === '/live'" class="live-pill live-pill--inline">LIVE</span>
           </RouterLink>
+        </nav>
+        <nav v-else class="mobile-menu__nav">
+          <template v-if="isSellerRoute">
+            <RouterLink
+                v-for="tab in sellerTabs"
+                :key="`seller-${tab.to}`"
+                :to="tab.to"
+                class="mobile-menu__link"
+                @click="closeMenu"
+            >
+              {{ tab.label }}
+            </RouterLink>
+          </template>
         </nav>
         <div class="mobile-menu__actions">
           <RouterLink
@@ -350,6 +394,24 @@ const handleLogout = () => {
   align-items: center;
   gap: 12px;
   min-width: 0;
+}
+
+.seller-nav {
+  min-width: 0;
+}
+
+.seller-nav__title {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 800;
+  color: var(--text-strong);
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.seller-tabs {
+  flex-wrap: wrap;
 }
 
 .nav-link {
@@ -697,6 +759,7 @@ const handleLogout = () => {
   .nav {
     display: none;
   }
+
 
   .search--desktop {
     display: none;
