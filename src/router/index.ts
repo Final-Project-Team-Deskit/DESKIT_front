@@ -93,6 +93,21 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../pages/seller/Live.vue'),
   },
   {
+    path: '/seller/live/create',
+    name: 'seller-live-create',
+    component: () => import('../pages/seller/LiveCreateCue.vue'),
+  },
+  {
+    path: '/seller/live/create/basic',
+    name: 'seller-live-create-basic',
+    component: () => import('../pages/seller/LiveCreateBasic.vue'),
+  },
+  {
+    path: '/seller/live/stream/:id',
+    name: 'seller-live-stream',
+    component: () => import('../pages/seller/LiveStream.vue'),
+  },
+  {
     path: '/seller/products',
     name: 'seller-products',
     component: () => import('../pages/seller/Products.vue'),
