@@ -2,6 +2,7 @@
 import { useRouter, useRoute } from 'vue-router'
 import PageContainer from '../components/PageContainer.vue'
 import PageHeader from '../components/PageHeader.vue'
+import { loginSeller } from '../lib/auth'
 
 type Provider = 'kakao' | 'naver' | 'google'
 
@@ -37,6 +38,7 @@ const handleLogin = (provider: Provider) => {
 }
 
 const goToSeller = () => {
+  loginSeller()
   router.push('/seller').catch(() => {})
 }
 </script>
@@ -104,7 +106,7 @@ const goToSeller = () => {
 
           <button type="button" class="social-btn seller" @click="goToSeller">
             <span class="brand-ico" aria-hidden="true">S</span>
-            <span class="btn-text">판매자 페이지로 이동(임시)</span>
+            <span class="btn-text">판매자 로그인</span>
           </button>
         </div>
 

@@ -3,8 +3,8 @@ export type AuthUser = {
   email: string
   signupType: string
   memberCategory: string
-  mbti: string
-  job: string
+  mbti?: string
+  job?: string
 }
 
 export const getAuthUser = (): AuthUser | null => {
@@ -29,6 +29,21 @@ export const getAuthUser = (): AuthUser | null => {
 }
 
 export const isLoggedIn = (): boolean => getAuthUser() !== null
+
+export const isSeller = (): boolean => getAuthUser()?.memberCategory === '판매자'
+
+export const loginSeller = (): void => {
+  const sellerUser = {
+    name: '홍길동(판매자)',
+    email: 'honggildong+seller@test.com',
+    signupType: '판매자(임시)',
+    memberCategory: '판매자',
+  }
+
+  localStorage.setItem('deskit-user', JSON.stringify(sellerUser))
+  localStorage.setItem('deskit-auth', 'seller')
+  window.dispatchEvent(new Event('deskit-user-updated'))
+}
 
 export const logout = (): void => {
   ;['deskit-user', 'deskit-auth', 'token'].forEach((key) => localStorage.removeItem(key))

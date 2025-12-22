@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import {RouterLink, useRoute, useRouter} from 'vue-router'
-import {isLoggedIn as checkLoggedIn, logout} from '../lib/auth'
+import {getAuthUser, isLoggedIn as checkLoggedIn, logout} from '../lib/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -9,6 +9,7 @@ const isScrolled = ref(false)
 const isMenuOpen = ref(false)
 const panelRef = ref<HTMLElement | null>(null)
 const isLoggedIn = ref(false)
+const memberCategory = ref<string | null>(null)
 
 const navLinks = [
   {label: '상품', to: '/products'},
@@ -17,7 +18,6 @@ const navLinks = [
 ]
 
 const sellerTabs = [
-  {label: '대시보드', to: '/seller'},
   {label: '방송관리', to: '/seller/live'},
   {label: '상품관리', to: '/seller/products'},
   {label: '재고관리', to: '/seller/inventory'},
@@ -26,19 +26,25 @@ const sellerTabs = [
 
 const refreshAuth = () => {
   isLoggedIn.value = checkLoggedIn()
+  memberCategory.value = getAuthUser()?.memberCategory ?? null
 }
 
-const actionLinks = computed(() =>
-    isLoggedIn.value
-        ? [
-          {label: '장바구니', to: '/cart', icon: 'cart'},
-          {label: '마이페이지', to: '/my', icon: 'user'},
-        ]
-        : [
-          {label: '장바구니', to: '/cart', icon: 'cart'},
-          {label: '로그인', to: '/login', icon: 'user'},
-        ],
-)
+const sellerMode = computed(() => isLoggedIn.value && memberCategory.value === '판매자')
+
+const actionLinks = computed(() => {
+  if (sellerMode.value) {
+    return [{label: '마이페이지', to: '/seller/my', icon: 'user'}]
+  }
+  return isLoggedIn.value
+    ? [
+      {label: '장바구니', to: '/cart', icon: 'cart'},
+      {label: '마이페이지', to: '/my', icon: 'user'},
+    ]
+    : [
+      {label: '장바구니', to: '/cart', icon: 'cart'},
+      {label: '로그인', to: '/login', icon: 'user'},
+    ]
+})
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 8
@@ -71,9 +77,8 @@ onBeforeUnmount(() => {
 const isLiveActive = computed(() => route.path.startsWith('/live'))
 const isSellerRoute = computed(() => route.path.startsWith('/seller'))
 const activeSellerPath = computed(() => {
-  if (route.path === '/seller') return '/seller'
-  const match = sellerTabs.find((tab) => tab.to !== '/seller' && route.path.startsWith(tab.to))
-  return match?.to ?? '/seller'
+  const match = sellerTabs.find((tab) => route.path.startsWith(tab.to))
+  return match?.to ?? ''
 })
 
 const logoTo = computed(() => (isSellerRoute.value ? '/seller' : '/'))
@@ -118,6 +123,7 @@ const submitSearch = () => {
 
 const handleLogout = () => {
   logout()
+  refreshAuth()
   router.push('/').catch(() => {
   })
 }
@@ -214,12 +220,7 @@ const handleLogout = () => {
             </svg>
             <span>{{ action.label }}</span>
           </RouterLink>
-          <button
-              v-if="isLoggedIn && actionLinks.some((a) => a.label === '마이페이지')"
-              type="button"
-              class="logout-btn"
-              @click="handleLogout"
-          >
+          <button v-if="isLoggedIn" type="button" class="logout-btn" @click="handleLogout">
             로그아웃
           </button>
           <button
@@ -310,12 +311,7 @@ const handleLogout = () => {
           >
             {{ action.label }}
           </RouterLink>
-          <RouterLink
-              v-if="isLoggedIn"
-              to="/my/orders"
-              class="mobile-menu__link"
-              @click="closeMenu"
-          >
+          <RouterLink v-if="isLoggedIn && !sellerMode" to="/my/orders" class="mobile-menu__link" @click="closeMenu">
             주문내역
           </RouterLink>
           <button

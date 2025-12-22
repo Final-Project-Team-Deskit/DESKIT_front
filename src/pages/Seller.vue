@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import {ref} from 'vue'
 import PageContainer from '../components/PageContainer.vue'
 
 const periodSales = ref<'daily' | 'monthly' | 'yearly'>('daily')
@@ -18,7 +18,7 @@ const periodRevenue = ref<'daily' | 'monthly' | 'yearly'>('daily')
 
     <section class="dashboard-grid">
       <div class="dashboard-main">
-        <article class="card ds-surface">
+        <article class="card card--sales ds-surface">
           <header class="card-head">
             <div>
               <h3>판매자 상품 판매 현황 (상품 종류)</h3>
@@ -54,7 +54,7 @@ const periodRevenue = ref<'daily' | 'monthly' | 'yearly'>('daily')
           <div class="chart-placeholder">그래프 영역 (데이터 준비 중)</div>
         </article>
 
-        <article class="card ds-surface">
+        <article class="card card--top5 ds-surface">
           <header class="card-head">
             <div>
               <h3>가장 많이 판매된 상품 TOP5</h3>
@@ -90,7 +90,9 @@ const periodRevenue = ref<'daily' | 'monthly' | 'yearly'>('daily')
           </ol>
         </article>
 
-        <article class="card ds-surface">
+        <div class="dashboard-divider" aria-hidden="true"></div>
+
+        <article class="card card--revenue ds-surface">
           <header class="card-head">
             <div>
               <h3>판매자 상품 판매 현황 (매출)</h3>
@@ -139,16 +141,6 @@ const periodRevenue = ref<'daily' | 'monthly' | 'yearly'>('daily')
           </article>
         </div>
       </div>
-
-      <aside class="dashboard-help ds-surface">
-        <h3>대시보드 안내</h3>
-        <ul>
-          <li>방송 및 상품 판매 현황을 기간별로 확인합니다.</li>
-          <li>TOP5 상품은 최근 판매량 기준으로 정렬됩니다.</li>
-          <li>일일 판매량/판매액은 당일 집계 기준입니다.</li>
-          <li>엑셀 추출로 운영 리포트를 저장할 수 있습니다.</li>
-        </ul>
-      </aside>
     </section>
   </PageContainer>
 </template>
@@ -181,7 +173,7 @@ const periodRevenue = ref<'daily' | 'monthly' | 'yearly'>('daily')
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: 1fr;
   gap: 18px;
 }
 
@@ -189,6 +181,10 @@ const periodRevenue = ref<'daily' | 'monthly' | 'yearly'>('daily')
   display: grid;
   gap: 18px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    'sales top5'
+    'divider divider'
+    'revenue kpi';
 }
 
 .card {
@@ -197,6 +193,25 @@ const periodRevenue = ref<'daily' | 'monthly' | 'yearly'>('daily')
   flex-direction: column;
   gap: 16px;
   min-height: 220px;
+}
+
+.card--sales {
+  grid-area: sales;
+}
+
+.card--top5 {
+  grid-area: top5;
+}
+
+.card--revenue {
+  grid-area: revenue;
+}
+
+.dashboard-divider {
+  grid-area: divider;
+  height: 1px;
+  background: var(--border-color);
+  opacity: 0.6;
 }
 
 .card-head {
@@ -290,7 +305,7 @@ const periodRevenue = ref<'daily' | 'monthly' | 'yearly'>('daily')
 }
 
 .kpi-grid {
-  grid-column: span 2;
+  grid-area: kpi;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
@@ -324,40 +339,6 @@ const periodRevenue = ref<'daily' | 'monthly' | 'yearly'>('daily')
   font-size: 0.9rem;
 }
 
-.dashboard-help {
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  height: fit-content;
-}
-
-.dashboard-help h3 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 800;
-  color: var(--text-strong);
-}
-
-.dashboard-help ul {
-  margin: 0;
-  padding-left: 18px;
-  display: grid;
-  gap: 8px;
-  color: var(--text-muted);
-  font-size: 0.95rem;
-}
-
-@media (max-width: 960px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-help {
-    order: 2;
-  }
-}
-
 @media (max-width: 720px) {
   .dashboard-header {
     flex-direction: column;
@@ -370,10 +351,15 @@ const periodRevenue = ref<'daily' | 'monthly' | 'yearly'>('daily')
 
   .dashboard-main {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      'sales'
+      'top5'
+      'divider'
+      'revenue'
+      'kpi';
   }
 
   .kpi-grid {
-    grid-column: span 1;
     grid-template-columns: 1fr;
   }
 }

@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { isLoggedIn } from '../lib/auth'
+import { isLoggedIn, isSeller } from '../lib/auth'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -83,6 +83,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../pages/Seller.vue'),
   },
   {
+    path: '/seller/my',
+    name: 'seller-my',
+    component: () => import('../pages/seller/MyPage.vue'),
+  },
+  {
     path: '/seller/live',
     name: 'seller-live',
     component: () => import('../pages/seller/Live.vue'),
@@ -116,11 +121,15 @@ const protectedPaths = ['/my', '/my/orders']
 
 router.beforeEach((to) => {
   const loggedIn = isLoggedIn()
+  const sellerProtected = to.path.startsWith('/seller')
   if (!loggedIn && protectedPaths.some((p) => to.path.startsWith(p))) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
+  if (sellerProtected && !isSeller()) {
+    return { path: '/login', query: { redirect: to.fullPath } }
+  }
   if (loggedIn && to.path === '/login') {
-    return { path: '/' }
+    return { path: isSeller() ? '/seller' : '/my' }
   }
   return true
 })
