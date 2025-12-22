@@ -16,6 +16,10 @@ type LiveItem = {
   statusBadge?: string
   viewerBadge?: string
   ctaLabel: string
+  likes?: number
+  viewers?: number
+  visibility?: string | boolean
+  createdAt?: string
 }
 
 const router = useRouter()
@@ -258,6 +262,54 @@ const vodItems = ref<LiveItem[]>([
     ctaLabel: '상세보기',
   },
 ])
+
+const vodStartDate = ref('')
+const vodEndDate = ref('')
+const vodVisibility = ref<'all' | 'public' | 'private'>('all')
+const vodSort = ref<'latest' | 'oldest' | 'likes_desc' | 'likes_asc' | 'viewers_desc' | 'viewers_asc'>('latest')
+
+const toDateMs = (item: LiveItem) => {
+  const raw = item.createdAt || item.datetime || ''
+  const parsed = Date.parse(raw)
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+const getLikes = (item: LiveItem) => (typeof item.likes === 'number' ? item.likes : 0)
+
+const getViewers = (item: LiveItem) => (typeof item.viewers === 'number' ? item.viewers : 0)
+
+const getVisibility = (item: LiveItem): 'public' | 'private' => {
+  if (typeof item.visibility === 'boolean') return item.visibility ? 'public' : 'private'
+  if (typeof item.visibility === 'string') {
+    if (item.visibility === 'public' || item.visibility === '공개') return 'public'
+    if (item.visibility === 'private' || item.visibility === '비공개') return 'private'
+  }
+  if ((item as any)?.isPublic === true) return 'public'
+  return 'public'
+}
+
+const filteredVodItems = computed(() => {
+  const startMs = vodStartDate.value ? Date.parse(`${vodStartDate.value}T00:00:00`) : null
+  const endMs = vodEndDate.value ? Date.parse(`${vodEndDate.value}T23:59:59`) : null
+  const filtered = vodItems.value.filter((item) => {
+    const dateMs = toDateMs(item)
+    if (startMs && dateMs < startMs) return false
+    if (endMs && dateMs > endMs) return false
+    const visibility = getVisibility(item)
+    if (vodVisibility.value !== 'all' && vodVisibility.value !== visibility) return false
+    return true
+  })
+
+  return filtered.slice().sort((a, b) => {
+    if (vodSort.value === 'latest') return toDateMs(b) - toDateMs(a)
+    if (vodSort.value === 'oldest') return toDateMs(a) - toDateMs(b)
+    if (vodSort.value === 'likes_desc') return getLikes(b) - getLikes(a)
+    if (vodSort.value === 'likes_asc') return getLikes(a) - getLikes(b)
+    if (vodSort.value === 'viewers_desc') return getViewers(b) - getViewers(a)
+    if (vodSort.value === 'viewers_asc') return getViewers(a) - getViewers(b)
+    return 0
+  })
+})
 
 const visibleLive = computed(() => activeTab.value === 'all' || activeTab.value === 'live')
 const visibleScheduled = computed(() => activeTab.value === 'all' || activeTab.value === 'scheduled')
@@ -574,9 +626,39 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
         <p class="ds-section-sub">저장된 다시보기 콘텐츠를 확인합니다.</p>
       </div>
 
+      <div class="vod-filters">
+        <label class="filter-field">
+          <span class="filter-label">시작일</span>
+          <input v-model="vodStartDate" type="date" />
+        </label>
+        <label class="filter-field">
+          <span class="filter-label">종료일</span>
+          <input v-model="vodEndDate" type="date" />
+        </label>
+        <label class="filter-field">
+          <span class="filter-label">공개 여부</span>
+          <select v-model="vodVisibility">
+            <option value="all">전체</option>
+            <option value="public">공개</option>
+            <option value="private">비공개</option>
+          </select>
+        </label>
+        <label class="filter-field">
+          <span class="filter-label">정렬</span>
+          <select v-model="vodSort">
+            <option value="latest">최신 순</option>
+            <option value="oldest">오래된 순</option>
+            <option value="likes_desc">좋아요 높은 순</option>
+            <option value="likes_asc">좋아요 낮은 순</option>
+            <option value="viewers_desc">시청자 수 높은 순</option>
+            <option value="viewers_asc">시청자 수 낮은 순</option>
+          </select>
+        </label>
+      </div>
+
       <div v-if="activeTab === 'vod'" class="vod-grid" aria-label="VOD 목록">
-        <template v-if="vodItems.length">
-          <article v-for="item in vodItems" :key="item.id" class="live-card ds-surface">
+        <template v-if="filteredVodItems.length">
+          <article v-for="item in filteredVodItems" :key="item.id" class="live-card ds-surface">
             <div class="live-thumb">
               <img class="live-thumb__img" :src="item.thumb" :alt="item.title" loading="lazy" />
               <div class="live-badges">
@@ -605,8 +687,8 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
         </button>
 
         <div class="live-carousel" ref="setCarouselRef('vod')" aria-label="VOD 목록">
-          <template v-if="vodItems.length">
-            <article v-for="item in vodItems" :key="item.id" class="live-card ds-surface">
+          <template v-if="filteredVodItems.length">
+            <article v-for="item in filteredVodItems" :key="item.id" class="live-card ds-surface">
               <div class="live-thumb">
                 <img class="live-thumb__img" :src="item.thumb" :alt="item.title" loading="lazy" />
                 <div class="live-badges">
@@ -725,6 +807,40 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
   font-size: 1.3rem;
   font-weight: 900;
   color: var(--text-strong);
+}
+
+.vod-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--surface);
+  margin-bottom: 12px;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 140px;
+}
+
+.filter-label {
+  font-weight: 800;
+  color: var(--text-strong);
+  font-size: 0.85rem;
+}
+
+.filter-field input,
+.filter-field select {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-weight: 700;
+  color: var(--text-strong);
+  background: var(--surface);
 }
 
 .live-feature-wrap {
