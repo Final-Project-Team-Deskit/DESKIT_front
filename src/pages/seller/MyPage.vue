@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageContainer from '../../components/PageContainer.vue'
 import PageHeader from '../../components/PageHeader.vue'
@@ -39,14 +39,81 @@ const managers = ref([
 ])
 
 const showManagerModal = ref(false)
+const showConfirmModal = ref(false)
+const showSent = ref(false)
+const managerEmail = ref('')
+const pendingEmail = ref('')
+const emailInputRef = ref<HTMLInputElement | null>(null)
+const isEmailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(managerEmail.value.trim()))
 
 const openManagerModal = () => {
   showManagerModal.value = true
+  managerEmail.value = ''
+  pendingEmail.value = ''
+  showSent.value = false
+  nextTick(() => {
+    emailInputRef.value?.focus()
+  })
 }
 
 const closeManagerModal = () => {
   showManagerModal.value = false
+  managerEmail.value = ''
+  pendingEmail.value = ''
+  showConfirmModal.value = false
+  showSent.value = false
 }
+
+const openConfirm = () => {
+  if (!isEmailValid.value) return
+  pendingEmail.value = managerEmail.value.trim()
+  showConfirmModal.value = true
+}
+
+const closeConfirm = () => {
+  showConfirmModal.value = false
+}
+
+const confirmSend = () => {
+  if (!pendingEmail.value) return
+  console.log('[manager login link]', pendingEmail.value)
+  showConfirmModal.value = false
+  showSent.value = true
+}
+
+const handleModalClose = () => {
+  if (showSent.value) {
+    closeManagerModal()
+    return
+  }
+  if (showConfirmModal.value) {
+    closeConfirm()
+    return
+  }
+  closeManagerModal()
+}
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && showManagerModal.value) {
+    if (showSent.value) {
+      closeManagerModal()
+      return
+    }
+    if (showConfirmModal.value) {
+      closeConfirm()
+      return
+    }
+    closeManagerModal()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <template>
@@ -98,63 +165,51 @@ const closeManagerModal = () => {
     </section>
 
     <div v-if="showManagerModal" class="manager-modal" role="dialog" aria-modal="true" aria-label="매니저 등록">
-      <div class="manager-modal__backdrop" @click="closeManagerModal"></div>
+      <div class="manager-modal__backdrop" @click="handleModalClose"></div>
       <div class="manager-modal__card ds-surface">
         <div class="manager-modal__head">
           <div>
             <h3>매니저 등록</h3>
-            <p>소셜 로그인으로 매니저 계정을 연결하세요.</p>
+            <p>매니저 이메일로 로그인 링크를 보내드립니다.</p>
           </div>
-          <button type="button" class="modal-close" @click="closeManagerModal" aria-label="닫기">✕</button>
+          <button type="button" class="modal-close" @click="handleModalClose" aria-label="닫기">✕</button>
         </div>
-        <div class="social-list">
-          <button type="button" class="social-btn kakao">
-            <span class="brand-ico" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 4c-4.7 0-8.5 2.9-8.5 6.6 0 2.4 1.6 4.5 4 5.7l-1 3.6c-.1.4.3.7.6.5l4.2-2.8c.2 0 .5.1.7.1 4.7 0 8.5-2.9 8.5-6.6S16.7 4 12 4z"
-                  fill="currentColor"
-                />
-              </svg>
-            </span>
-            <span class="btn-text">카카오로 시작하기</span>
-          </button>
-
-          <button type="button" class="social-btn naver">
-            <span class="brand-ico" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M7 6h4.2l5.8 8.2V6H21v12h-4.2L11 9.8V18H7V6z" fill="currentColor" />
-              </svg>
-            </span>
-            <span class="btn-text">네이버로 시작하기</span>
-          </button>
-
-          <button type="button" class="social-btn google">
-            <span class="brand-ico google" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M21.6 12.3c0-.7-.1-1.2-.2-1.8H12v3.4h5.4c-.1.9-.7 2.2-2 3.1v2.2h3.2c1.9-1.7 3-4.3 3-7.9z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M12 22c2.7 0 5-.9 6.6-2.5l-3.2-2.2c-.9.6-2 .9-3.4.9-2.6 0-4.8-1.7-5.6-4.1H3v2.3C4.7 19.8 8.1 22 12 22z"
-                  fill="currentColor"
-                  opacity=".6"
-                />
-                <path
-                  d="M6.4 14.1c-.2-.6-.3-1.2-.3-1.8s.1-1.2.3-1.8V8.2H3C2.4 9.4 2 10.7 2 12.3c0 1.6.4 2.9 1 4.1l3.4-2.3z"
-                  fill="currentColor"
-                  opacity=".4"
-                />
-                <path
-                  d="M12 6.7c1.9 0 3.2.8 3.9 1.5l2.9-2.8C17 3.8 14.7 2.7 12 2.7 8.1 2.7 4.7 4.9 3 8.2l3.4 2.3c.8-2.4 3-3.8 5.6-3.8z"
-                  fill="currentColor"
-                  opacity=".8"
-                />
-              </svg>
-            </span>
-            <span class="btn-text">구글로 시작하기</span>
-          </button>
+        <form v-if="!showConfirmModal && !showSent" class="manager-form" @submit.prevent="openConfirm">
+          <label class="field">
+            <span class="field__label">매니저 이메일</span>
+            <input
+              ref="emailInputRef"
+              v-model="managerEmail"
+              class="field-input"
+              :class="{ 'field-input--error': managerEmail.trim() && !isEmailValid }"
+              type="email"
+              placeholder="manager@company.com"
+              autocomplete="email"
+              required
+            />
+          </label>
+          <p class="manager-error" :class="{ 'is-visible': managerEmail.trim() && !isEmailValid }">
+            이메일 형식을 확인해 주세요.
+          </p>
+          <div class="manager-actions">
+            <button type="button" class="btn ghost" @click="closeManagerModal">취소</button>
+            <button type="submit" class="btn primary" :disabled="!isEmailValid">로그인 링크 보내기</button>
+          </div>
+        </form>
+        <div v-else-if="showConfirmModal" class="confirm-body">
+          <p class="confirm-title">다음 이메일로 로그인 링크를 보낼까요?</p>
+          <p class="confirm-email">{{ pendingEmail }}</p>
+          <div class="manager-actions">
+            <button type="button" class="btn ghost" @click="closeConfirm">뒤로</button>
+            <button type="button" class="btn primary" @click="confirmSend">보내기</button>
+          </div>
+        </div>
+        <div v-else class="sent-body">
+          <p class="sent-title">로그인 링크를 보냈습니다.</p>
+          <p class="sent-email">{{ pendingEmail }}</p>
+          <div class="manager-actions">
+            <button type="button" class="btn primary" @click="closeManagerModal">확인</button>
+          </div>
         </div>
       </div>
     </div>
@@ -272,6 +327,7 @@ const closeManagerModal = () => {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
 }
 
 .manager-modal__head {
@@ -303,6 +359,12 @@ const closeManagerModal = () => {
   padding: 6px 10px;
   font-weight: 900;
   cursor: pointer;
+}
+
+.modal-close:hover,
+.modal-close:focus-visible {
+  border-color: var(--text-strong);
+  outline: none;
 }
 
 .social-list {
@@ -442,5 +504,112 @@ const closeManagerModal = () => {
 .seller-logout:focus-visible {
   border-color: var(--text-strong);
   outline: none;
+}
+
+.manager-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field__label {
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+.field-input {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 700;
+  color: var(--text-strong);
+  background: var(--surface);
+  width: 100%;
+}
+
+.field-input::placeholder {
+  color: var(--text-muted);
+}
+
+.field-input--error {
+  border-color: rgba(239, 68, 68, 0.8);
+}
+
+.manager-error {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ef4444;
+  min-height: 18px;
+  visibility: hidden;
+}
+
+.manager-error.is-visible {
+  visibility: visible;
+}
+
+.manager-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.confirm-body,
+.sent-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 6px;
+}
+
+.confirm-title,
+.sent-title {
+  margin: 0;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+.confirm-email,
+.sent-email {
+  margin: 0;
+  font-weight: 900;
+  color: var(--text-strong);
+  word-break: break-all;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--surface-weak);
+}
+
+.btn {
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 800;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-strong);
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: var(--primary-color);
+  color: #fff;
+  border-color: transparent;
+}
+
+.btn.ghost {
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>
