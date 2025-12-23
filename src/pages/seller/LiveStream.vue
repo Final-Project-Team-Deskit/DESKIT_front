@@ -119,7 +119,17 @@ onBeforeUnmount(() => {
               <p class="panel-sub">{{ item.option }}</p>
               <span class="panel-status" :class="{ 'is-soldout': item.status === '품절' }">{{ item.status }}</span>
             </div>
-            <button type="button" class="pin-btn" aria-label="고정">📌</button>
+            <button type="button" class="pin-btn" aria-label="고정">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M9 4h6l1 5-2 2v6l-2-1-2 1v-6l-2-2 1-5z"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
           </div>
         </div>
       </aside>
@@ -127,16 +137,67 @@ onBeforeUnmount(() => {
       <div class="stream-center ds-surface">
         <div class="stream-overlay stream-overlay--left">
           <div class="stream-overlay__row">
-            <span aria-hidden="true">👥</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M8 12a3 3 0 100-6 3 3 0 000 6z"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M16 12a3 3 0 100-6 3 3 0 000 6z"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M4 18c.4-2 2.6-3.5 4.8-3.5"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M20 18c-.4-2-2.6-3.5-4.8-3.5"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
             <span>{{ viewerCount.toLocaleString('ko-KR') }}명 시청 중</span>
           </div>
           <div class="stream-overlay__row">
-            <span aria-hidden="true">⏱️</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="13" r="7" stroke="currentColor" stroke-width="1.7" />
+              <path
+                d="M12 3h4"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+              />
+              <path
+                d="M12 13V9"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+              />
+            </svg>
             <span>경과 {{ elapsed }}</span>
           </div>
         </div>
         <div class="stream-overlay stream-overlay--right">
-          <span aria-hidden="true">❤️</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M12 20s-7-4.4-7-9a4 4 0 017-2 4 4 0 017 2c0 4.6-7 9-7 9z"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
           <span>{{ likeCount.toLocaleString('ko-KR') }}</span>
         </div>
         <div class="stream-fab">
@@ -147,7 +208,15 @@ onBeforeUnmount(() => {
             aria-label="상품 패널 토글"
             @click="showProducts = !showProducts"
           >
-            👕
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M4 7l4-3h8l4 3-2 4h-3v9H9v-9H6L4 7z"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
           </button>
           <button
             type="button"
@@ -156,7 +225,15 @@ onBeforeUnmount(() => {
             aria-label="채팅 패널 토글"
             @click="showChat = !showChat"
           >
-            💬
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M5 6h14a3 3 0 013 3v6a3 3 0 01-3 3H9l-4 3v-3H5a3 3 0 01-3-3V9a3 3 0 013-3z"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
           </button>
           <button
             type="button"
@@ -165,7 +242,22 @@ onBeforeUnmount(() => {
             aria-label="방송 설정 토글"
             @click="showSettings = !showSettings"
           >
-            ⚙️
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M12 9a3 3 0 100 6 3 3 0 000-6z"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M4 12a8 8 0 011-3l2 1 2-2-1-2a8 8 0 013-1l1 2h2l1-2a8 8 0 013 1l-1 2 2 2 2-1a8 8 0 011 3l-2 1v2l2 1a8 8 0 01-1 3l-2-1-2 2 1 2a8 8 0 01-3 1l-1-2h-2l-1 2a8 8 0 01-3-1l1-2-2-2-2 1a8 8 0 01-1-3l2-1v-2l-2-1z"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
           </button>
         </div>
         <div class="stream-center__body">
@@ -189,7 +281,13 @@ onBeforeUnmount(() => {
                   :aria-pressed="micEnabled"
                   @click="micEnabled = !micEnabled"
                 >
-                  <span class="stream-toggle__icon" aria-hidden="true">🎤</span>
+                  <span class="stream-toggle__icon" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <rect x="9" y="4" width="6" height="10" rx="3" stroke="currentColor" stroke-width="1.7" />
+                      <path d="M6 11a6 6 0 0012 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                      <path d="M12 17v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                    </svg>
+                  </span>
                   <span>마이크</span>
                 </button>
                 <button
@@ -199,21 +297,40 @@ onBeforeUnmount(() => {
                   :aria-pressed="videoEnabled"
                   @click="videoEnabled = !videoEnabled"
                 >
-                  <span class="stream-toggle__icon" aria-hidden="true">📷</span>
+                  <span class="stream-toggle__icon" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <rect x="4" y="7" width="11" height="10" rx="2" stroke="currentColor" stroke-width="1.7" />
+                      <path d="M15 10l5-3v10l-5-3v-4z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </span>
                   <span>카메라</span>
                 </button>
               </div>
             </div>
             <div class="stream-settings__group">
               <div class="stream-settings__slider">
-                <span class="stream-settings__icon" aria-label="볼륨">🔊</span>
+                <span class="stream-settings__icon" aria-label="볼륨">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M5 10h4l5-4v12l-5-4H5z"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path d="M17 9a3 3 0 010 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                  </svg>
+                </span>
                 <input v-model.number="volume" type="range" min="0" max="100" aria-label="볼륨 조절" />
                 <span class="stream-settings__value">{{ volume }}%</span>
               </div>
             </div>
             <div class="stream-settings__group stream-settings__group--end">
               <button type="button" class="stream-settings__close" aria-label="설정 닫기" @click="showSettings = false">
-                ✕
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M6 6l12 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                  <path d="M18 6l-12 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                </svg>
               </button>
             </div>
             <div class="stream-settings__group">

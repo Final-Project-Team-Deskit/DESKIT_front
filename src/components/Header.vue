@@ -20,8 +20,6 @@ const navLinks = [
 const sellerTabs = [
   {label: '방송관리', to: '/seller/live'},
   {label: '상품관리', to: '/seller/products'},
-  {label: '재고관리', to: '/seller/inventory'},
-  {label: '고객센터', to: '/seller/support'},
 ]
 
 const refreshAuth = () => {

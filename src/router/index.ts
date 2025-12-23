@@ -81,16 +81,23 @@ const routes: RouteRecordRaw[] = [
     path: '/seller',
     name: 'seller',
     component: () => import('../pages/Seller.vue'),
+    children: [
+      {
+        path: 'live',
+        name: 'seller-live',
+        component: () => import('../pages/seller/Live.vue'),
+      },
+      {
+        path: 'products',
+        name: 'seller-products',
+        component: () => import('../pages/seller/Products.vue'),
+      },
+    ],
   },
   {
     path: '/seller/my',
     name: 'seller-my',
     component: () => import('../pages/seller/MyPage.vue'),
-  },
-  {
-    path: '/seller/live',
-    name: 'seller-live',
-    component: () => import('../pages/seller/Live.vue'),
   },
   {
     path: '/seller/live/create',
@@ -108,19 +115,24 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../pages/seller/LiveStream.vue'),
   },
   {
-    path: '/seller/products',
-    name: 'seller-products',
-    component: () => import('../pages/seller/Products.vue'),
+    path: '/seller/products/create',
+    name: 'seller-products-create',
+    component: () => import('../pages/seller/ProductCreateInfo.vue'),
   },
   {
-    path: '/seller/inventory',
-    name: 'seller-inventory',
-    component: () => import('../pages/seller/Inventory.vue'),
+    path: '/seller/products/create/detail',
+    name: 'seller-products-create-detail',
+    component: () => import('../pages/seller/ProductCreateDetail.vue'),
   },
   {
-    path: '/seller/support',
-    name: 'seller-support',
-    component: () => import('../pages/seller/Support.vue'),
+    path: '/seller/products/:id/edit',
+    name: 'seller-products-edit',
+    component: () => import('../pages/seller/ProductEditInfo.vue'),
+  },
+  {
+    path: '/seller/products/:id/edit/detail',
+    name: 'seller-products-edit-detail',
+    component: () => import('../pages/seller/ProductEditDetail.vue'),
   },
 ]
 
@@ -132,15 +144,16 @@ export const router = createRouter({
   },
 })
 
-const protectedPaths = ['/my', '/my/orders']
-
 router.beforeEach((to) => {
   const loggedIn = isLoggedIn()
-  const sellerProtected = to.path.startsWith('/seller')
-  if (!loggedIn && protectedPaths.some((p) => to.path.startsWith(p))) {
+  const isSellerPath = to.path.startsWith('/seller')
+  if (!loggedIn && to.path.startsWith('/my')) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
-  if (sellerProtected && !isSeller()) {
+  if (isSellerPath && !loggedIn) {
+    return { path: '/login', query: { redirect: to.fullPath } }
+  }
+  if (isSellerPath && loggedIn && !isSeller()) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
   if (loggedIn && to.path === '/login') {

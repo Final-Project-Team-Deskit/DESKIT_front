@@ -3,8 +3,14 @@ export type AuthUser = {
   email: string
   signupType: string
   memberCategory: string
+  sellerRole?: string
   mbti?: string
   job?: string
+  seller_id?: number
+  sellerId?: number
+  id?: number
+  user_id?: number
+  userId?: number
 }
 
 export const getAuthUser = (): AuthUser | null => {
@@ -18,8 +24,14 @@ export const getAuthUser = (): AuthUser | null => {
         email: parsed.email,
         signupType: parsed.signupType || '',
         memberCategory: parsed.memberCategory || '',
+        sellerRole: (parsed as any).sellerRole || '',
         mbti: parsed.mbti || '',
         job: parsed.job || '',
+        seller_id: typeof (parsed as any).seller_id === 'number' ? (parsed as any).seller_id : undefined,
+        sellerId: typeof (parsed as any).sellerId === 'number' ? (parsed as any).sellerId : undefined,
+        id: typeof (parsed as any).id === 'number' ? (parsed as any).id : undefined,
+        user_id: typeof (parsed as any).user_id === 'number' ? (parsed as any).user_id : undefined,
+        userId: typeof (parsed as any).userId === 'number' ? (parsed as any).userId : undefined,
       }
     }
   } catch {
@@ -38,6 +50,8 @@ export const loginSeller = (): void => {
     email: 'honggildong+seller@test.com',
     signupType: '판매자(임시)',
     memberCategory: '판매자',
+    sellerRole: '오너',
+    seller_id: 101,
   }
 
   localStorage.setItem('deskit-user', JSON.stringify(sellerUser))

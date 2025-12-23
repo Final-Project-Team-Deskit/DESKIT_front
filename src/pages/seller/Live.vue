@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import PageContainer from '../../components/PageContainer.vue'
 import { getScheduledBroadcasts } from '../../composables/useSellerBroadcasts'
 
 type LiveTab = 'all' | 'scheduled' | 'live' | 'vod'
@@ -380,7 +379,7 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
 </script>
 
 <template>
-  <PageContainer>
+  <div>
     <header class="live-header">
       <div class="live-header__spacer" aria-hidden="true"></div>
 
@@ -626,7 +625,7 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
         <p class="ds-section-sub">저장된 다시보기 콘텐츠를 확인합니다.</p>
       </div>
 
-      <div class="vod-filters">
+      <div v-if="activeTab === 'vod'" class="vod-filters">
         <label class="filter-field">
           <span class="filter-label">시작일</span>
           <input v-model="vodStartDate" type="date" />
@@ -716,7 +715,7 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
         </button>
       </div>
     </section>
-  </PageContainer>
+  </div>
 </template>
 
 <style scoped>
