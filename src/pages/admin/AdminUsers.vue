@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import PageHeader from '../../components/PageHeader.vue'
 
 type UserStatus = '활성화' | '비활성화'
 type UserType = '일반회원' | '판매자'
@@ -190,6 +191,7 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="admin-users">
+    <PageHeader eyebrow="DESKIT" title="회원관리" />
     <h2 class="admin-title">회원 관리</h2>
 
     <section class="filter-card ds-surface">

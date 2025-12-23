@@ -7,6 +7,7 @@ import {
   getAdminReservationSummaries,
   type AdminReservationSummary,
 } from '../../lib/mocks/adminReservations'
+import { ADMIN_LIVES_EVENT, getAdminLiveSummaries, type AdminLiveSummary } from '../../lib/mocks/adminLives'
 import { ADMIN_VODS_EVENT, getAdminVodSummaries, type AdminVodSummary } from '../../lib/mocks/adminVods'
 
 type LiveTab = 'all' | 'scheduled' | 'live' | 'vod'
@@ -34,17 +35,23 @@ type AdminVodItem = LiveItem & {
   statusLabel: string
 }
 
+type AdminLiveItem = LiveItem & {
+  sellerName: string
+  status: string
+  viewers: number
+}
+
 const router = useRouter()
 const route = useRoute()
 const activeTab = ref<LiveTab>('all')
 
-const liveItems = ref<LiveItem[]>([])
+const liveItems = ref<AdminLiveItem[]>([])
 
 const scheduledItems = ref<ReservationItem[]>([])
 
 const vodItems = ref<AdminVodItem[]>([])
 
-const visibleLive = computed(() => activeTab.value === 'live')
+const visibleLive = computed(() => activeTab.value === 'all' || activeTab.value === 'live')
 const visibleScheduled = computed(() => activeTab.value === 'all' || activeTab.value === 'scheduled')
 const visibleVod = computed(() => activeTab.value === 'all' || activeTab.value === 'vod')
 
@@ -63,6 +70,21 @@ const syncScheduled = () => {
     ctaLabel: item.ctaLabel,
     sellerName: item.sellerName,
     status: item.status,
+  }))
+}
+
+const syncLives = () => {
+  const items = getAdminLiveSummaries().filter((item) => item.status === '방송중')
+  liveItems.value = items.map((item: AdminLiveSummary) => ({
+    id: item.id,
+    title: item.title,
+    subtitle: item.subtitle,
+    thumb: item.thumb,
+    datetime: `시작: ${item.startedAt}`,
+    ctaLabel: '상세보기',
+    sellerName: item.sellerName,
+    status: item.status,
+    viewers: item.viewers,
   }))
 }
 
@@ -85,6 +107,11 @@ const openReservationDetail = (id: string) => {
   router.push(`/admin/live/reservations/${id}`).catch(() => {})
 }
 
+const openLiveDetail = (id: string) => {
+  if (!id) return
+  router.push(`/admin/live/now/${id}`).catch(() => {})
+}
+
 const openVodDetail = (id: string) => {
   if (!id) return
   router.push(`/admin/live/vods/${id}`).catch(() => {})
@@ -104,13 +131,16 @@ watch(
 
 onMounted(() => {
   refreshTabFromQuery()
+  syncLives()
   syncScheduled()
   syncVods()
+  window.addEventListener(ADMIN_LIVES_EVENT, syncLives)
   window.addEventListener(ADMIN_RESERVATIONS_EVENT, syncScheduled)
   window.addEventListener(ADMIN_VODS_EVENT, syncVods)
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener(ADMIN_LIVES_EVENT, syncLives)
   window.removeEventListener(ADMIN_RESERVATIONS_EVENT, syncScheduled)
   window.removeEventListener(ADMIN_VODS_EVENT, syncVods)
 })
@@ -167,17 +197,58 @@ onBeforeUnmount(() => {
         <p class="ds-section-sub">현재 진행 중인 방송 목록입니다.</p>
       </div>
 
-      <div class="carousel-wrap">
+      <div v-if="activeTab === 'live'" class="live-grid" aria-label="방송 중 목록">
+        <template v-if="liveItems.length">
+          <article
+            v-for="item in liveItems"
+            :key="item.id"
+            class="live-card ds-surface live-card--clickable"
+            @click="openLiveDetail(item.id)"
+          >
+            <div class="live-thumb">
+              <img class="live-thumb__img" :src="item.thumb" :alt="item.title" loading="lazy" />
+              <div class="live-badges">
+                <span class="badge badge--live">{{ item.status }}</span>
+              </div>
+            </div>
+            <div class="live-body">
+              <div class="live-meta">
+                <p class="live-title">{{ item.title }}</p>
+                <p class="live-date">{{ item.datetime }}</p>
+                <p class="live-seller">{{ item.sellerName }}</p>
+                <p class="live-viewers">시청자 {{ item.viewers }}명</p>
+              </div>
+            </div>
+          </article>
+        </template>
+
+        <article v-else class="live-card ds-surface live-card--empty">
+          <p class="live-card__title">진행 중인 방송이 없습니다.</p>
+          <p class="live-card__meta">현재 라이브 방송이 비어 있습니다.</p>
+        </article>
+      </div>
+
+      <div v-else class="carousel-wrap">
         <div class="live-carousel" aria-label="방송 중 목록">
           <template v-if="liveItems.length">
-            <article v-for="item in liveItems" :key="item.id" class="live-card ds-surface">
+            <article
+              v-for="item in liveItems"
+              :key="item.id"
+              class="live-card ds-surface live-card--clickable"
+              @click="openLiveDetail(item.id)"
+            >
               <div class="live-thumb">
                 <img class="live-thumb__img" :src="item.thumb" :alt="item.title" loading="lazy" />
+                <div class="live-badges">
+                  <span class="badge badge--live">{{ item.status }}</span>
+                </div>
               </div>
               <div class="live-body">
                 <div class="live-meta">
                   <p class="live-title">{{ item.title }}</p>
                   <p class="live-date">{{ item.datetime }}</p>
+                  <p class="live-seller">{{ item.sellerName }}</p>
+                  <p class="live-viewers">시청자 {{ item.viewers }}명</p>
                 </div>
               </div>
             </article>
@@ -474,6 +545,16 @@ onBeforeUnmount(() => {
   font-size: 0.9rem;
 }
 
+.badge--viewer {
+  background: rgba(15, 23, 42, 0.85);
+  color: #fff;
+}
+
+.badge--live {
+  background: #ef4444;
+  color: #fff;
+}
+
 .badge--scheduled {
   background: rgba(15, 23, 42, 0.8);
   color: #fff;
@@ -524,6 +605,13 @@ onBeforeUnmount(() => {
   font-size: 0.9rem;
 }
 
+.live-viewers {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
 .live-card--empty {
   justify-content: center;
   padding: 18px;
@@ -541,6 +629,7 @@ onBeforeUnmount(() => {
   font-weight: 700;
 }
 
+.live-grid,
 .scheduled-grid,
 .vod-grid {
   display: grid;
@@ -549,6 +638,7 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 1200px) {
+  .live-grid,
   .scheduled-grid,
   .vod-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -556,6 +646,7 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 960px) {
+  .live-grid,
   .scheduled-grid,
   .vod-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -572,6 +663,7 @@ onBeforeUnmount(() => {
     padding: 10px 10px;
   }
 
+  .live-grid,
   .scheduled-grid,
   .vod-grid {
     grid-template-columns: 1fr;

@@ -98,6 +98,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../pages/admin/live/ReservationDetail.vue'),
       },
       {
+        path: 'live/now/:liveId',
+        name: 'admin-live-now-detail',
+        component: () => import('../pages/admin/live/LiveDetail.vue'),
+      },
+      {
         path: 'live/vods/:vodId',
         name: 'admin-live-vod-detail',
         component: () => import('../pages/admin/live/VodDetail.vue'),

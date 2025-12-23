@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import PageHeader from '../../components/PageHeader.vue'
 
 type Period = 'daily' | 'monthly' | 'yearly'
 type ChartItem = { label: string; value: number }
@@ -95,6 +96,7 @@ const handleExport = () => {
 
 <template>
   <section class="admin-dashboard">
+    <PageHeader eyebrow="DESKIT" title="대시보드" />
     <header class="dashboard-header">
       <div>
         <h2 class="section-title">관리자 대시보드</h2>

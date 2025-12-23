@@ -53,8 +53,16 @@ export const getSellerMockProducts = (sellerId: number): DbProduct[] => {
   return readAll().filter((product) => resolveOwnerId(product) === sellerId)
 }
 
+export const getAllMockProducts = (): DbProduct[] => {
+  return readAll()
+}
+
 export const deleteSellerMockProduct = (id: string | number): void => {
   const key = String(id)
   const next = readAll().filter((item) => String(item.product_id) !== key)
   writeAll(next)
+}
+
+export const deleteMockProduct = (id: string | number): void => {
+  deleteSellerMockProduct(id)
 }
