@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import PageContainer from '../components/PageContainer.vue'
+import PageHeader from '../components/PageHeader.vue'
 
 const periodSales = ref<'daily' | 'monthly' | 'yearly'>('daily')
 const periodRevenue = ref<'daily' | 'monthly' | 'yearly'>('daily')
@@ -78,6 +79,7 @@ const maxRevenue = computed(() => Math.max(...revenueChart.value.map((item) => i
 
 <template>
   <PageContainer>
+    <PageHeader v-if="isHome" eyebrow="DESKIT" title="홈" />
     <template v-if="isHome">
       <header class="dashboard-header">
         <div>

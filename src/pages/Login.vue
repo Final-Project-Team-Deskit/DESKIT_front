@@ -2,7 +2,7 @@
 import { useRouter, useRoute } from 'vue-router'
 import PageContainer from '../components/PageContainer.vue'
 import PageHeader from '../components/PageHeader.vue'
-import { loginSeller } from '../lib/auth'
+import { loginAdmin, loginSeller } from '../lib/auth'
 
 type Provider = 'kakao' | 'naver' | 'google'
 
@@ -40,6 +40,11 @@ const handleLogin = (provider: Provider) => {
 const goToSeller = () => {
   loginSeller()
   router.push('/seller').catch(() => {})
+}
+
+const goToAdmin = () => {
+  loginAdmin()
+  router.push('/admin').catch(() => {})
 }
 </script>
 
@@ -107,6 +112,11 @@ const goToSeller = () => {
           <button type="button" class="social-btn seller" @click="goToSeller">
             <span class="brand-ico" aria-hidden="true">S</span>
             <span class="btn-text">판매자 로그인</span>
+          </button>
+
+          <button type="button" class="social-btn admin" @click="goToAdmin">
+            <span class="brand-ico" aria-hidden="true">A</span>
+            <span class="btn-text">관리자 로그인</span>
           </button>
         </div>
 
@@ -266,6 +276,17 @@ const goToSeller = () => {
 
 .social-btn.seller .brand-ico {
   background: var(--surface-weak);
+  color: var(--text-strong);
+}
+
+.social-btn.admin {
+  background: var(--surface-weak);
+  color: var(--text-strong);
+  border-color: var(--border-color);
+}
+
+.social-btn.admin .brand-ico {
+  background: #ffffff;
   color: var(--text-strong);
 }
 

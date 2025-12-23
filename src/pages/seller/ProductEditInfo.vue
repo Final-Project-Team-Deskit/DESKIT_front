@@ -5,7 +5,8 @@ import PageContainer from '../../components/PageContainer.vue'
 import PageHeader from '../../components/PageHeader.vue'
 import { productsData } from '../../lib/products-data'
 import { getAuthUser } from '../../lib/auth'
-import { getProductById, loadProductDraft, saveProductDraft, type SellerProductDraft } from '../../composables/useSellerProducts'
+import { deleteProduct, getProductById, loadProductDraft, saveProductDraft, type SellerProductDraft } from '../../composables/useSellerProducts'
+import { deleteSellerMockProduct } from '../../lib/mocks/sellerProducts'
 
 const router = useRouter()
 const route = useRoute()
@@ -161,6 +162,15 @@ const cancel = () => {
   router.push('/seller/products').catch(() => {})
 }
 
+const handleDelete = () => {
+  const id = typeof route.params.id === 'string' ? route.params.id : ''
+  if (!window.confirm('정말 삭제하시겠습니까?')) return
+  deleteSellerMockProduct(id)
+  deleteProduct(id)
+  console.log('[product] delete', id)
+  router.push('/seller/products').catch(() => {})
+}
+
 onMounted(() => {
   loadInitial()
 })
@@ -217,6 +227,7 @@ onMounted(() => {
       <p v-if="error" class="error">{{ error }}</p>
       <div class="actions">
         <button type="button" class="btn" @click="cancel">취소</button>
+        <button type="button" class="btn danger" @click="handleDelete">삭제</button>
         <button type="button" class="btn primary" @click="goNext">상세 작성</button>
       </div>
     </section>
@@ -348,6 +359,11 @@ input {
 .btn.primary {
   border-color: var(--primary-color);
   color: var(--primary-color);
+}
+
+.btn.danger {
+  border-color: #ef4444;
+  color: #ef4444;
 }
 
 .btn.ghost {

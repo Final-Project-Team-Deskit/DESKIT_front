@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { productsData, type DbProduct } from '../../lib/products-data'
+import PageHeader from '../../components/PageHeader.vue'
+import { type DbProduct } from '../../lib/products-data'
 import { getAuthUser } from '../../lib/auth'
 import { getSellerProducts } from '../../composables/useSellerProducts'
+import { getSellerMockProducts, SELLER_PRODUCTS_EVENT } from '../../lib/mocks/sellerProducts'
 
 type ProductStatus = 'selling' | 'soldout' | 'hidden'
 
@@ -19,6 +21,7 @@ const statusFilter = ref<StatusFilter>('all')
 const sortOption = ref<SortOption>('name')
 const searchQuery = ref('')
 const statusMap = ref<Record<string, ProductStatus>>({})
+const baseProducts = ref<DbProduct[]>([])
 
 const statusLabelMap: Record<ProductStatus, string> = {
   selling: '판매중',
@@ -76,28 +79,8 @@ const setStatus = (productKey: string | number, status: ProductStatus) => {
   saveStatusMap()
 }
 
-const resolveOwnerId = (product: any) => {
-  const candidates = [
-    product?.seller_id,
-    product?.sellerId,
-    product?.owner_id,
-    product?.ownerId,
-    product?.user_id,
-    product?.userId,
-  ]
-  for (const value of candidates) {
-    if (typeof value === 'number' && Number.isFinite(value)) return value
-    if (typeof value === 'string') {
-      const parsed = Number.parseInt(value, 10)
-      if (!Number.isNaN(parsed)) return parsed
-    }
-  }
-  return null
-}
-
 const sellerProducts = computed(() => {
-  if (!sellerId.value) return []
-  return productsData.filter((product) => resolveOwnerId(product) === sellerId.value)
+  return baseProducts.value
 })
 
 const localProducts = computed(() => {
@@ -163,14 +146,30 @@ const handleEdit = (product: any) => {
   router.push(`/seller/products/${key}/edit`).catch(() => {})
 }
 
+const refreshProducts = () => {
+  if (!sellerId.value) {
+    baseProducts.value = []
+    return
+  }
+  baseProducts.value = getSellerMockProducts(sellerId.value)
+}
+
 onMounted(() => {
   sellerId.value = deriveSellerId()
   loadStatusMap()
+  window.addEventListener(SELLER_PRODUCTS_EVENT, refreshProducts)
+})
+
+watch(sellerId, refreshProducts, { immediate: true })
+
+onBeforeUnmount(() => {
+  window.removeEventListener(SELLER_PRODUCTS_EVENT, refreshProducts)
 })
 </script>
 
 <template>
   <div>
+    <PageHeader eyebrow="DESKIT" title="상품관리" />
     <header class="page-head">
       <div>
         <h2 class="section-title">나의 판매 목록({{ filteredProducts.length }})</h2>

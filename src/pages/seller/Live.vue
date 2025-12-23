@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import PageHeader from '../../components/PageHeader.vue'
 import { getScheduledBroadcasts } from '../../composables/useSellerBroadcasts'
+import { sellerReservationSummaries } from '../../lib/mocks/sellerReservations'
+import { sellerVodSummaries } from '../../lib/mocks/sellerVods'
 
 type LiveTab = 'all' | 'scheduled' | 'live' | 'vod'
 type CarouselKind = 'live' | 'scheduled' | 'vod'
@@ -158,109 +161,18 @@ const liveStats = ref({
   revenue: '₩4,920,000',
 })
 
-const mockScheduled = [
-  {
-    id: 'sch-1',
-    title: '주간 인기 셋업 모음',
-    subtitle: 'TOP 셋업 리뷰',
-    thumb: gradientThumb('334155', '0f172a'),
-    datetime: '2025.12.15 19:00',
-    ctaLabel: '방송 시작',
-  },
-  {
-    id: 'sch-2',
-    title: '책상 수납 A to Z',
-    subtitle: '정리의 기술',
-    thumb: gradientThumb('1f2937', '334155'),
-    datetime: '2025.12.16 20:00',
-    ctaLabel: '방송 시작',
-  },
-  {
-    id: 'sch-3',
-    title: '마우스/키보드 추천',
-    subtitle: '입문부터 고급까지',
-    thumb: gradientThumb('0f172a', '1f2937'),
-    datetime: '2025.12.17 18:30',
-    ctaLabel: '방송 시작',
-  },
-  {
-    id: 'sch-4',
-    title: '의자 선택 가이드',
-    subtitle: '허리 편한 셋업',
-    thumb: gradientThumb('111827', '0f172a'),
-    datetime: '2025.12.18 21:00',
-    ctaLabel: '방송 시작',
-  },
-  {
-    id: 'sch-5',
-    title: '노트북 거치대 비교',
-    subtitle: '자세/높이 세팅',
-    thumb: gradientThumb('1f2937', '111827'),
-    datetime: '2025.12.19 19:30',
-    ctaLabel: '방송 시작',
-  },
-  {
-    id: 'sch-6',
-    title: '소형 방 책상 배치',
-    subtitle: '공간 최적화',
-    thumb: gradientThumb('0b1324', '111827'),
-    datetime: '2025.12.20 20:00',
-    ctaLabel: '방송 시작',
-  },
-]
-
 const scheduledItems = ref<LiveItem[]>([])
 
-const vodItems = ref<LiveItem[]>([
-  {
-    id: 'vod-1',
-    title: 'VOD: 홈오피스 기본기',
-    subtitle: '초보 셋업 추천',
-    thumb: gradientThumb('0f172a', '334155'),
-    datetime: '업로드: 2025.12.10',
+const vodItems = ref<LiveItem[]>(
+  sellerVodSummaries.map((item) => ({
+    id: item.id,
+    title: item.title,
+    subtitle: '',
+    thumb: item.thumb,
+    datetime: `업로드: ${item.startedAt}`,
     ctaLabel: '상세보기',
-  },
-  {
-    id: 'vod-2',
-    title: 'VOD: 조명 세팅 특강',
-    subtitle: '분위기 만드는 법',
-    thumb: gradientThumb('111827', '1f2937'),
-    datetime: '업로드: 2025.12.09',
-    ctaLabel: '상세보기',
-  },
-  {
-    id: 'vod-3',
-    title: 'VOD: 케이블 정리',
-    subtitle: '깔끔하게 숨기기',
-    thumb: gradientThumb('1f2937', '0f172a'),
-    datetime: '업로드: 2025.12.07',
-    ctaLabel: '상세보기',
-  },
-  {
-    id: 'vod-4',
-    title: 'VOD: 게이밍 셋업',
-    subtitle: '듀얼 모니터 구성',
-    thumb: gradientThumb('0b1324', '0f172a'),
-    datetime: '업로드: 2025.12.05',
-    ctaLabel: '상세보기',
-  },
-  {
-    id: 'vod-5',
-    title: 'VOD: 수납/선반 추천',
-    subtitle: '공간 활용',
-    thumb: gradientThumb('334155', '111827'),
-    datetime: '업로드: 2025.12.03',
-    ctaLabel: '상세보기',
-  },
-  {
-    id: 'vod-6',
-    title: 'VOD: 의자 고르는 법',
-    subtitle: '체형별 체크',
-    thumb: gradientThumb('0f172a', '111827'),
-    datetime: '업로드: 2025.12.01',
-    ctaLabel: '상세보기',
-  },
-])
+  })),
+)
 
 const vodStartDate = ref('')
 const vodEndDate = ref('')
@@ -343,7 +255,7 @@ const handleCreate = () => {
 
 const loadScheduled = () => {
   const stored = getScheduledBroadcasts()
-  scheduledItems.value = [...stored, ...mockScheduled]
+  scheduledItems.value = [...stored, ...sellerReservationSummaries]
 }
 
 const syncTabFromRoute = () => {
@@ -371,15 +283,24 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
     return
   }
   if (kind === 'scheduled') {
-    alert(`방송 시작(임시): ${item.title}`)
+    router.push(`/seller/broadcasts/reservations/${item.id}`).catch(() => {})
     return
   }
-  alert(`상세보기(임시): ${item.title}`)
+  router.push(`/seller/broadcasts/vods/${item.id}`).catch(() => {})
+}
+
+const openReservationDetail = (item: LiveItem) => {
+  router.push(`/seller/broadcasts/reservations/${item.id}`).catch(() => {})
+}
+
+const openVodDetail = (item: LiveItem) => {
+  router.push(`/seller/broadcasts/vods/${item.id}`).catch(() => {})
 }
 </script>
 
 <template>
   <div>
+    <PageHeader eyebrow="DESKIT" title="방송관리" />
     <header class="live-header">
       <div class="live-header__spacer" aria-hidden="true"></div>
 
@@ -560,7 +481,12 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
 
       <div v-if="activeTab === 'scheduled'" class="scheduled-grid" aria-label="예약 방송 목록">
         <template v-if="scheduledItems.length">
-          <article v-for="item in scheduledItems" :key="item.id" class="live-card ds-surface">
+          <article
+            v-for="item in scheduledItems"
+            :key="item.id"
+            class="live-card ds-surface live-card--clickable"
+            @click="openReservationDetail(item)"
+          >
             <div class="live-thumb">
               <img class="live-thumb__img" :src="item.thumb" :alt="item.title" loading="lazy" />
               <div class="live-badges">
@@ -572,7 +498,9 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
                 <p class="live-title">{{ item.title }}</p>
                 <p class="live-date">{{ item.datetime }}</p>
               </div>
-              <button type="button" class="live-cta live-cta--ghost" @click="handleCta('scheduled', item)">{{ item.ctaLabel }}</button>
+              <button type="button" class="live-cta live-cta--ghost" @click.stop="handleCta('scheduled', item)">
+                {{ item.ctaLabel }}
+              </button>
             </div>
           </article>
         </template>
@@ -590,7 +518,12 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
 
         <div class="live-carousel" ref="setCarouselRef('scheduled')" aria-label="예약 방송 목록">
           <template v-if="scheduledItems.length">
-            <article v-for="item in scheduledItems" :key="item.id" class="live-card ds-surface">
+            <article
+              v-for="item in scheduledItems"
+              :key="item.id"
+              class="live-card ds-surface live-card--clickable"
+              @click="openReservationDetail(item)"
+            >
               <div class="live-thumb">
                 <img class="live-thumb__img" :src="item.thumb" :alt="item.title" loading="lazy" />
                 <div class="live-badges">
@@ -602,7 +535,9 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
                   <p class="live-title">{{ item.title }}</p>
                   <p class="live-date">{{ item.datetime }}</p>
                 </div>
-                <button type="button" class="live-cta live-cta--ghost" @click="handleCta('scheduled', item)">{{ item.ctaLabel }}</button>
+                <button type="button" class="live-cta live-cta--ghost" @click.stop="handleCta('scheduled', item)">
+                  {{ item.ctaLabel }}
+                </button>
               </div>
             </article>
           </template>
@@ -657,7 +592,12 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
 
       <div v-if="activeTab === 'vod'" class="vod-grid" aria-label="VOD 목록">
         <template v-if="filteredVodItems.length">
-          <article v-for="item in filteredVodItems" :key="item.id" class="live-card ds-surface">
+            <article
+              v-for="item in filteredVodItems"
+              :key="item.id"
+              class="live-card ds-surface live-card--clickable"
+              @click="openVodDetail(item)"
+            >
             <div class="live-thumb">
               <img class="live-thumb__img" :src="item.thumb" :alt="item.title" loading="lazy" />
               <div class="live-badges">
@@ -669,7 +609,9 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
                 <p class="live-title">{{ item.title }}</p>
                 <p class="live-date">{{ item.datetime }}</p>
               </div>
-              <button type="button" class="live-cta live-cta--ghost" @click="handleCta('vod', item)">{{ item.ctaLabel }}</button>
+                <button type="button" class="live-cta live-cta--ghost" @click.stop="handleCta('vod', item)">
+                  {{ item.ctaLabel }}
+                </button>
             </div>
           </article>
         </template>
@@ -687,7 +629,12 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
 
         <div class="live-carousel" ref="setCarouselRef('vod')" aria-label="VOD 목록">
           <template v-if="filteredVodItems.length">
-            <article v-for="item in filteredVodItems" :key="item.id" class="live-card ds-surface">
+            <article
+              v-for="item in filteredVodItems"
+              :key="item.id"
+              class="live-card ds-surface live-card--clickable"
+              @click="openVodDetail(item)"
+            >
               <div class="live-thumb">
                 <img class="live-thumb__img" :src="item.thumb" :alt="item.title" loading="lazy" />
                 <div class="live-badges">
@@ -699,7 +646,9 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
                   <p class="live-title">{{ item.title }}</p>
                   <p class="live-date">{{ item.datetime }}</p>
                 </div>
-                <button type="button" class="live-cta live-cta--ghost" @click="handleCta('vod', item)">{{ item.ctaLabel }}</button>
+              <button type="button" class="live-cta live-cta--ghost" @click.stop="handleCta('vod', item)">
+                {{ item.ctaLabel }}
+              </button>
               </div>
             </article>
           </template>
@@ -986,6 +935,10 @@ const handleCta = (kind: CarouselKind, item: LiveItem) => {
   display: flex;
   flex-direction: column;
   min-height: 280px;
+}
+
+.live-card--clickable {
+  cursor: pointer;
 }
 
 .live-thumb {

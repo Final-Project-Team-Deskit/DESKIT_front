@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { isLoggedIn, isSeller } from '../lib/auth'
+import { isAdmin, isLoggedIn, isSeller } from '../lib/auth'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -76,6 +76,48 @@ const routes: RouteRecordRaw[] = [
     path: '/admin',
     name: 'admin',
     component: () => import('../pages/Admin.vue'),
+    children: [
+      {
+        path: '',
+        name: 'admin-dashboard',
+        component: () => import('../pages/admin/AdminDashboard.vue'),
+      },
+      {
+        path: 'users',
+        name: 'admin-users',
+        component: () => import('../pages/admin/AdminUsers.vue'),
+      },
+      {
+        path: 'live',
+        name: 'admin-live',
+        component: () => import('../pages/admin/AdminLive.vue'),
+      },
+      {
+        path: 'live/reservations/:reservationId',
+        name: 'admin-live-reservation-detail',
+        component: () => import('../pages/admin/live/ReservationDetail.vue'),
+      },
+      {
+        path: 'live/vods/:vodId',
+        name: 'admin-live-vod-detail',
+        component: () => import('../pages/admin/live/VodDetail.vue'),
+      },
+      {
+        path: 'products',
+        name: 'admin-products',
+        component: () => import('../pages/admin/AdminProducts.vue'),
+      },
+      {
+        path: 'support',
+        name: 'admin-support',
+        component: () => import('../pages/admin/AdminSupport.vue'),
+      },
+      {
+        path: 'my',
+        name: 'admin-my',
+        component: () => import('../pages/admin/AdminMyPage.vue'),
+      },
+    ],
   },
   {
     path: '/seller',
@@ -113,6 +155,16 @@ const routes: RouteRecordRaw[] = [
     path: '/seller/live/stream/:id',
     name: 'seller-live-stream',
     component: () => import('../pages/seller/LiveStream.vue'),
+  },
+  {
+    path: '/seller/broadcasts/reservations/:reservationId',
+    name: 'seller-reservation-detail',
+    component: () => import('../pages/seller/broadcasts/ReservationDetail.vue'),
+  },
+  {
+    path: '/seller/broadcasts/vods/:vodId',
+    name: 'seller-vod-detail',
+    component: () => import('../pages/seller/broadcasts/VodDetail.vue'),
   },
   {
     path: '/seller/products/create',
@@ -156,8 +208,13 @@ router.beforeEach((to) => {
   if (isSellerPath && loggedIn && !isSeller()) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
+  if (to.path.startsWith('/admin')) {
+    if (!loggedIn || !isAdmin()) {
+      return { path: '/login', query: { redirect: to.fullPath } }
+    }
+  }
   if (loggedIn && to.path === '/login') {
-    return { path: isSeller() ? '/seller' : '/my' }
+    return { path: isAdmin() ? '/admin' : isSeller() ? '/seller' : '/my' }
   }
   return true
 })

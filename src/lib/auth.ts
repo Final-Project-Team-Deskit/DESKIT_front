@@ -44,6 +44,8 @@ export const isLoggedIn = (): boolean => getAuthUser() !== null
 
 export const isSeller = (): boolean => getAuthUser()?.memberCategory === '판매자'
 
+export const isAdmin = (): boolean => getAuthUser()?.memberCategory === '관리자'
+
 export const loginSeller = (): void => {
   const sellerUser = {
     name: '홍길동(판매자)',
@@ -56,6 +58,19 @@ export const loginSeller = (): void => {
 
   localStorage.setItem('deskit-user', JSON.stringify(sellerUser))
   localStorage.setItem('deskit-auth', 'seller')
+  window.dispatchEvent(new Event('deskit-user-updated'))
+}
+
+export const loginAdmin = (): void => {
+  const adminUser = {
+    name: '관리자',
+    email: 'admin@test.com',
+    signupType: '관리자(임시)',
+    memberCategory: '관리자',
+  }
+
+  localStorage.setItem('deskit-user', JSON.stringify(adminUser))
+  localStorage.setItem('deskit-auth', 'admin')
   window.dispatchEvent(new Event('deskit-user-updated'))
 }
 

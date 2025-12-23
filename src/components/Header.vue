@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import {RouterLink, useRoute, useRouter} from 'vue-router'
-import {getAuthUser, isLoggedIn as checkLoggedIn, logout} from '../lib/auth'
+import {getAuthUser, isAdmin, isLoggedIn as checkLoggedIn, logout} from '../lib/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,12 +22,20 @@ const sellerTabs = [
   {label: '상품관리', to: '/seller/products'},
 ]
 
+const adminTabs = [
+  {label: '회원관리', to: '/admin/users'},
+  {label: '방송관리', to: '/admin/live'},
+  {label: '상품관리', to: '/admin/products'},
+  {label: '고객센터', to: '/admin/support'},
+]
+
 const refreshAuth = () => {
   isLoggedIn.value = checkLoggedIn()
   memberCategory.value = getAuthUser()?.memberCategory ?? null
 }
 
 const sellerMode = computed(() => isLoggedIn.value && memberCategory.value === '판매자')
+const adminMode = computed(() => isLoggedIn.value && isAdmin() && route.path.startsWith('/admin'))
 
 const actionLinks = computed(() => {
   if (sellerMode.value) {
@@ -74,12 +82,17 @@ onBeforeUnmount(() => {
 
 const isLiveActive = computed(() => route.path.startsWith('/live'))
 const isSellerRoute = computed(() => route.path.startsWith('/seller'))
+const isAdminRoute = computed(() => route.path.startsWith('/admin'))
 const activeSellerPath = computed(() => {
   const match = sellerTabs.find((tab) => route.path.startsWith(tab.to))
   return match?.to ?? ''
 })
+const activeAdminPath = computed(() => {
+  const match = adminTabs.find((tab) => route.path.startsWith(tab.to))
+  return match?.to ?? ''
+})
 
-const logoTo = computed(() => (isSellerRoute.value ? '/seller' : '/'))
+const logoTo = computed(() => (isSellerRoute.value ? '/seller' : isAdminRoute.value ? '/admin' : '/'))
 
 const closeMenu = () => {
   isMenuOpen.value = false
@@ -135,7 +148,7 @@ const handleLogout = () => {
           <img class="brand__logo" src="/DESKIT.png" alt="DESKIT"/>
         </RouterLink>
 
-        <nav v-if="!isSellerRoute" class="nav">
+        <nav v-if="!isSellerRoute && !isAdminRoute" class="nav">
           <RouterLink
               v-for="item in navLinks"
               :key="item.to"
@@ -154,14 +167,26 @@ const handleLogout = () => {
           </RouterLink>
         </nav>
         <div v-else class="seller-nav">
-          <nav class="nav seller-tabs" aria-label="판매자 대시보드 탭">
+          <nav v-if="isSellerRoute" class="nav seller-tabs" aria-label="판매자 대시보드 탭">
             <RouterLink
-                v-for="tab in sellerTabs"
-                :key="tab.to"
-                :to="tab.to"
-                class="nav-link"
-                :class="{ 'nav-link--active': activeSellerPath === tab.to }"
-                :aria-current="activeSellerPath === tab.to ? 'page' : undefined"
+              v-for="tab in sellerTabs"
+              :key="tab.to"
+              :to="tab.to"
+              class="nav-link"
+              :class="{ 'nav-link--active': activeSellerPath === tab.to }"
+              :aria-current="activeSellerPath === tab.to ? 'page' : undefined"
+            >
+              {{ tab.label }}
+            </RouterLink>
+          </nav>
+          <nav v-else class="nav seller-tabs" aria-label="관리자 대시보드 탭">
+            <RouterLink
+              v-for="tab in adminTabs"
+              :key="tab.to"
+              :to="tab.to"
+              class="nav-link"
+              :class="{ 'nav-link--active': activeAdminPath === tab.to }"
+              :aria-current="activeAdminPath === tab.to ? 'page' : undefined"
             >
               {{ tab.label }}
             </RouterLink>
@@ -170,7 +195,7 @@ const handleLogout = () => {
       </div>
 
       <div class="right right-wrap">
-        <form class="search search--desktop" @submit.prevent="submitSearch">
+        <form v-if="!adminMode && !isSellerRoute" class="search search--desktop" @submit.prevent="submitSearch">
           <svg class="search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path
                 d="M11 4a7 7 0 015.657 11.045l3.149 3.148-1.414 1.414-3.148-3.149A7 7 0 1111 4z"
@@ -183,11 +208,17 @@ const handleLogout = () => {
           <input v-model="searchQuery" class="search__input" type="search" placeholder="검색어를 입력하세요"/>
         </form>
         <div class="actions">
+          <template v-if="adminMode">
+            <RouterLink to="/admin/my" class="action-link">
+              <span>마이페이지</span>
+            </RouterLink>
+          </template>
           <RouterLink
               v-for="action in actionLinks"
               :key="action.to"
               :to="action.to"
               class="action-link"
+              v-if="!adminMode"
           >
             <svg v-if="action.icon === 'cart'" width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path
@@ -249,7 +280,7 @@ const handleLogout = () => {
           aria-label="모바일 메뉴"
           ref="panelRef"
       >
-        <form class="search search--mobile" @submit.prevent="submitSearch">
+        <form v-if="!adminMode && !isSellerRoute" class="search search--mobile" @submit.prevent="submitSearch">
           <svg class="search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <path
                 d="M11 4a7 7 0 015.657 11.045l3.149 3.148-1.414 1.414-3.148-3.149A7 7 0 1111 4z"
@@ -274,7 +305,7 @@ const handleLogout = () => {
             </svg>
           </button>
         </div>
-        <nav v-if="!isSellerRoute" class="mobile-menu__nav">
+        <nav v-if="!isSellerRoute && !isAdminRoute" class="mobile-menu__nav">
           <RouterLink
               v-for="item in navLinks"
               :key="item.to"
@@ -289,11 +320,22 @@ const handleLogout = () => {
         <nav v-else class="mobile-menu__nav">
           <template v-if="isSellerRoute">
             <RouterLink
-                v-for="tab in sellerTabs"
-                :key="`seller-${tab.to}`"
-                :to="tab.to"
-                class="mobile-menu__link"
-                @click="closeMenu"
+              v-for="tab in sellerTabs"
+              :key="`seller-${tab.to}`"
+              :to="tab.to"
+              class="mobile-menu__link"
+              @click="closeMenu"
+            >
+              {{ tab.label }}
+            </RouterLink>
+          </template>
+          <template v-else>
+            <RouterLink
+              v-for="tab in adminTabs"
+              :key="`admin-${tab.to}`"
+              :to="tab.to"
+              class="mobile-menu__link"
+              @click="closeMenu"
             >
               {{ tab.label }}
             </RouterLink>
@@ -305,11 +347,15 @@ const handleLogout = () => {
               :key="action.to"
               :to="action.to"
               class="mobile-menu__link"
+              v-if="!adminMode"
               @click="closeMenu"
           >
             {{ action.label }}
           </RouterLink>
-          <RouterLink v-if="isLoggedIn && !sellerMode" to="/my/orders" class="mobile-menu__link" @click="closeMenu">
+          <RouterLink v-if="adminMode" to="/admin/my" class="mobile-menu__link" @click="closeMenu">
+            마이페이지
+          </RouterLink>
+          <RouterLink v-if="isLoggedIn && !sellerMode && !adminMode" to="/my/orders" class="mobile-menu__link" @click="closeMenu">
             주문내역
           </RouterLink>
           <button
