@@ -2,7 +2,9 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import PageHeader from '../../components/PageHeader.vue'
 import { type DbProduct } from '../../lib/products-data'
-import { getAllMockProducts, deleteMockProduct, SELLER_PRODUCTS_EVENT } from '../../lib/mocks/sellerProducts'
+import { deleteProduct, listProducts } from '../../api/products'
+import { SELLER_PRODUCTS_EVENT } from '../../lib/mocks/sellerProducts'
+import { USE_MOCK_API } from '../../api/config'
 
 type ProductStatus = 'selling' | 'soldout' | 'hidden'
 
@@ -17,6 +19,9 @@ const sortOption = ref<SortOption>('name')
 const searchQuery = ref('')
 const statusMap = ref<Record<string, ProductStatus>>({})
 const baseProducts = ref<DbProduct[]>([])
+const isLoading = ref(false)
+const errorMessage = ref('')
+const deletingKey = ref<string | null>(null)
 
 const statusLabelMap: Record<ProductStatus, string> = {
   selling: '판매중',
@@ -49,8 +54,20 @@ const getStatus = (productKey: string | number): ProductStatus => {
   return statusMap.value[String(productKey)] || 'selling'
 }
 
-const refreshProducts = () => {
-  baseProducts.value = getAllMockProducts()
+const refreshProducts = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    baseProducts.value = await listProducts()
+  } catch {
+    errorMessage.value = '상품 목록을 불러오지 못했어요.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const onProductsChanged = () => {
+  void refreshProducts()
 }
 
 const filteredProducts = computed(() => {
@@ -73,6 +90,13 @@ const filteredProducts = computed(() => {
     return filtered.slice().sort((a, b) => order[getStatus(getProductKey(a))] - order[getStatus(getProductKey(b))])
   }
   return filtered
+})
+
+const keyedProducts = computed(() => {
+  return filteredProducts.value.map((product) => ({
+    product,
+    key: getProductKey(product),
+  }))
 })
 
 const formatPrice = (value: number) => `${value.toLocaleString('ko-KR')}원`
@@ -109,21 +133,35 @@ const resolveSellerId = (product: any) => {
   return null
 }
 
-const handleDelete = (product: any) => {
+const handleDelete = async (product: any) => {
   const key = getProductKey(product)
   if (!key) return
+  if (deletingKey.value === key) return
   if (!window.confirm('정말 삭제하시겠습니까?')) return
-  deleteMockProduct(key)
+  deletingKey.value = key
+  errorMessage.value = ''
+  try {
+    await deleteProduct(key)
+    await refreshProducts()
+  } catch {
+    errorMessage.value = '삭제에 실패했어요. 잠시 후 다시 시도해주세요.'
+  } finally {
+    deletingKey.value = null
+  }
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadStatusMap()
-  refreshProducts()
-  window.addEventListener(SELLER_PRODUCTS_EVENT, refreshProducts)
+  await refreshProducts()
+  if (USE_MOCK_API) {
+    window.addEventListener(SELLER_PRODUCTS_EVENT, onProductsChanged)
+  }
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener(SELLER_PRODUCTS_EVENT, refreshProducts)
+  if (USE_MOCK_API) {
+    window.removeEventListener(SELLER_PRODUCTS_EVENT, onProductsChanged)
+  }
 })
 </script>
 
@@ -161,32 +199,49 @@ onBeforeUnmount(() => {
       </label>
     </section>
 
-    <section v-if="filteredProducts.length === 0" class="empty-state ds-surface">
+    <p v-if="isLoading" class="ds-section-sub">불러오는 중…</p>
+    <section v-else-if="errorMessage" class="empty-state ds-surface">
+      <p>{{ errorMessage }}</p>
+    </section>
+    <section v-else-if="keyedProducts.length === 0" class="empty-state ds-surface">
       <p>등록된 판매 상품이 없습니다.</p>
     </section>
     <section v-else class="product-list">
-      <article v-for="product in filteredProducts" :key="getProductKey(product)">
+      <article v-for="item in keyedProducts" :key="item.key">
         <div class="product-card ds-surface">
           <div class="thumb">
-            <img v-if="product.imageUrl || product.images?.[0]" :src="product.imageUrl || product.images?.[0]" :alt="product.name" />
+            <img
+              v-if="item.product.imageUrl || item.product.images?.[0]"
+              :src="item.product.imageUrl || item.product.images?.[0]"
+              :alt="item.product.name"
+            />
             <div v-else class="thumb__placeholder"></div>
           </div>
           <div class="product-main">
-            <div class="product-title">{{ product.name }}</div>
-            <p class="product-desc">{{ product.short_desc ?? product.shortDesc }}</p>
-            <p v-if="resolveSellerId(product)" class="seller-info">판매자: {{ resolveSellerId(product) }}</p>
+            <div class="product-title">{{ item.product.name }}</div>
+            <p class="product-desc">{{ item.product.short_desc ?? item.product.shortDesc }}</p>
+            <p v-if="resolveSellerId(item.product)" class="seller-info">
+              판매자: {{ resolveSellerId(item.product) }}
+            </p>
             <div class="product-prices">
-              <span class="price-original">{{ formatPrice(product.cost_price ?? product.costPrice ?? 0) }}</span>
-              <span class="price-sale">{{ formatPrice(product.price) }}</span>
-              <span v-if="getDiscountPercent(product) > 0" class="price-discount">
-                -{{ getDiscountPercent(product) }}%
+              <span class="price-original">{{ formatPrice(item.product.cost_price ?? item.product.costPrice ?? 0) }}</span>
+              <span class="price-sale">{{ formatPrice(item.product.price) }}</span>
+              <span v-if="getDiscountPercent(item.product) > 0" class="price-discount">
+                -{{ getDiscountPercent(item.product) }}%
               </span>
             </div>
           </div>
           <div class="product-side">
-            <div class="stock">재고: {{ getStockCount(product) }}개</div>
-            <span class="status-pill">{{ statusLabelMap[getStatus(getProductKey(product))] }}</span>
-            <button type="button" class="btn danger" @click="handleDelete(product)">삭제</button>
+            <div class="stock">재고: {{ getStockCount(item.product) }}개</div>
+            <span class="status-pill">{{ statusLabelMap[getStatus(item.key)] }}</span>
+            <button
+              type="button"
+              class="btn danger"
+              :disabled="deletingKey === item.key"
+              @click="handleDelete(item.product)"
+            >
+              {{ deletingKey === item.key ? '삭제 중…' : '삭제' }}
+            </button>
           </div>
         </div>
       </article>

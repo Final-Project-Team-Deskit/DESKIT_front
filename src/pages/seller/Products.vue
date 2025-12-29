@@ -6,6 +6,7 @@ import { type DbProduct } from '../../lib/products-data'
 import { getAuthUser } from '../../lib/auth'
 import { getSellerProducts } from '../../composables/useSellerProducts'
 import { getSellerMockProducts, SELLER_PRODUCTS_EVENT } from '../../lib/mocks/sellerProducts'
+import { USE_MOCK_API } from '../../api/config'
 
 type ProductStatus = 'selling' | 'soldout' | 'hidden'
 
@@ -157,13 +158,17 @@ const refreshProducts = () => {
 onMounted(() => {
   sellerId.value = deriveSellerId()
   loadStatusMap()
-  window.addEventListener(SELLER_PRODUCTS_EVENT, refreshProducts)
+  if (USE_MOCK_API) {
+    window.addEventListener(SELLER_PRODUCTS_EVENT, refreshProducts)
+  }
 })
 
 watch(sellerId, refreshProducts, { immediate: true })
 
 onBeforeUnmount(() => {
-  window.removeEventListener(SELLER_PRODUCTS_EVENT, refreshProducts)
+  if (USE_MOCK_API) {
+    window.removeEventListener(SELLER_PRODUCTS_EVENT, refreshProducts)
+  }
 })
 </script>
 
